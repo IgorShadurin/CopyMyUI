@@ -12,9 +12,12 @@
 
 # testing
 /coverage
+/test-results
+.idea
 
 # next.js
 /.next/
+/.tmp/
 /out/
 
 # production
@@ -23,6 +26,7 @@
 # misc
 .DS_Store
 *.pem
+*.db
 
 # debug
 npm-debug.log*
@@ -39,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# runtime uploads
+/public/uploads

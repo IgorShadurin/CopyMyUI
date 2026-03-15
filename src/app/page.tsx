@@ -1,65 +1,240 @@
 import Image from "next/image";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-export default function Home() {
+import { ArrowRight, ChevronRight, Crown, Library } from "lucide-react";
+
+import { BrowseRail } from "@/components/browse-rail";
+import { ComponentCard } from "@/components/component-card";
+import { getI18n, translateCategory } from "@/i18n/server";
+import { withLocalePath } from "@/i18n/routing";
+import { createPageMetadata } from "@/lib/seo";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { getHomepageData, listCategories } from "@/lib/server/component-service";
+import { cn } from "@/lib/utils";
+import { getViewer } from "@/lib/viewer";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, messages } = await getI18n();
+
+  return createPageMetadata({
+    locale,
+    path: "/",
+    title: messages.home.title,
+    description: messages.home.description,
+    keywords: [
+      "SwiftUI components",
+      "SwiftUI templates",
+      "SwiftUI marketplace",
+      "iOS UI components",
+      "CopyMyUI",
+    ],
+    imagePath: "/seed-screenshots/aurora-tab-orbit-full.jpg",
+  });
+}
+
+export default async function Home() {
+  const { locale, messages } = await getI18n();
+  const viewer = await getViewer();
+  const [categories, homepage] = await Promise.all([
+    listCategories(),
+    getHomepageData(viewer?.id),
+  ]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="mx-auto w-full max-w-[1500px] px-2 py-6 sm:px-3 lg:px-4">
+      <div className="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
+        <BrowseRail
+          locale={locale}
+          messages={messages}
+          categories={categories}
+          viewer={viewer}
+          categoryLinkMode="pages"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+
+        <div className="min-w-0 space-y-6">
+          <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <div className="min-w-0">
+                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+                  <span className="flex items-start gap-3">
+                    <span className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl border border-black/8 bg-white/90 text-foreground shadow-[0_12px_30px_-24px_rgba(22,18,12,0.55)] sm:size-11">
+                      <Library className="size-5 sm:size-6" />
+                    </span>
+                    <span>{messages.home.title}</span>
+                  </span>
+                </h1>
+                <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+                  {messages.home.description}
+                </p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:max-w-2xl">
+                <Link
+                  href={withLocalePath(locale, "/components")}
+                  className={cn(buttonVariants({ size: "lg" }), "rounded-[1.2rem] px-5")}
+                >
+                  {messages.home.exploreComponents}
+                  <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href={withLocalePath(locale, "/components?access=premium")}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "rounded-[1.2rem] px-5"
+                  )}
+                >
+                  <Crown className="size-4" />
+                  {messages.home.browsePremium}
+                </Link>
+              </div>
+            </div>
+
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <Link
+                  href={withLocalePath(locale, "/components")}
+                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
+                >
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                    {messages.home.topRatedEyebrow}
+                  </p>
+                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                    {messages.home.browseEveryComponent}
+                    <ArrowRight className="ml-1 size-3.5" />
+                  </span>
+                </Link>
+
+                <Link
+                  href={withLocalePath(locale, "/components?access=premium")}
+                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
+                >
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                    {messages.home.premiumEyebrow}
+                  </p>
+                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                    {messages.home.browsePremium}
+                    <ArrowRight className="ml-1 size-3.5" />
+                  </span>
+                </Link>
+
+                <Link
+                  href={withLocalePath(locale, "/components?sort=newest")}
+                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
+                >
+                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                    {messages.home.newestEyebrow}
+                  </p>
+                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                    {messages.home.freshlyApproved}
+                    <ArrowRight className="ml-1 size-3.5" />
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
+            <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                  {messages.home.topRatedEyebrow}
+                </h2>
+              </div>
+              <Link
+                href={withLocalePath(locale, "/components")}
+                className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
+              >
+                <span className="flex items-center">
+                  {messages.home.browseEveryComponent}
+                  <ChevronRight className="ml-1 size-4" />
+                </span>
+              </Link>
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {homepage.topRated.map((component) => (
+                <ComponentCard key={component.id} component={component} />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
+            <div className="border-b border-black/6 pb-4">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                {messages.home.categoryLeadersEyebrow}
+              </h2>
+            </div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {homepage.categoryHighlights.map((highlight) =>
+                highlight.component ? (
+                  <Link
+                    key={highlight.id}
+                    href={withLocalePath(locale, `/categories/${highlight.slug}`)}
+                    className="group rounded-[1.6rem] border border-black/6 bg-[rgba(252,251,247,0.96)] p-4 transition-colors hover:bg-white"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      {translateCategory(highlight, messages, locale).name}
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+                      {highlight.component.title}
+                    </h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-7 text-muted-foreground">
+                      {translateCategory(highlight, messages, locale).description}
+                    </p>
+                    <div className="mt-4 overflow-hidden rounded-[1.3rem] border border-black/6 bg-white">
+                      <Image
+                        src={highlight.component.previewImage ?? "/seed-screenshots/aurora-tab-orbit.svg"}
+                        alt={highlight.component.title}
+                        width={1600}
+                        height={1000}
+                        unoptimized
+                        className="aspect-[16/10] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                    </div>
+                  </Link>
+                ) : null
+              )}
+            </div>
+          </section>
+
+          {homepage.premium.length > 0 ? (
+            <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
+              <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {messages.home.premiumEyebrow}
+                  </h2>
+                </div>
+                <Link
+                  href={withLocalePath(locale, "/components?access=premium")}
+                  className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
+                >
+                  <span className="flex items-center">
+                    {messages.home.browseEveryComponent}
+                    <ChevronRight className="ml-1 size-4" />
+                  </span>
+                </Link>
+              </div>
+              <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {homepage.premium.map((component) => (
+                  <ComponentCard key={component.id} component={component} />
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
+            <div className="border-b border-black/6 pb-4">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                {messages.home.newestEyebrow}
+              </h2>
+            </div>
+            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {homepage.newest.map((component) => (
+                <ComponentCard key={component.id} component={component} />
+              ))}
+            </div>
+          </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

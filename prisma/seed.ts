@@ -1,0 +1,2361 @@
+import "dotenv/config";
+
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import {
+  ComponentAccessType,
+  ComponentStatus,
+  ModerationDecision,
+  PrismaClient,
+  UserRole,
+} from "@prisma/client";
+import slugify from "slugify";
+import sharp from "sharp";
+
+import { rebuildApprovedComponentSearchIndex } from "../src/lib/server/search-service";
+
+const prisma = new PrismaClient({
+  adapter: new PrismaBetterSqlite3({
+    url: process.env.DATABASE_URL ?? "file:./dev.db",
+  }),
+});
+
+const categories = [
+  {
+    name: "Navigation",
+    description: "Tab bars, side rails, pagers, and compact navigational shells.",
+    accent: "from-orange-300 via-pink-200 to-amber-100",
+  },
+  {
+    name: "Dashboards",
+    description: "Metrics, cards, management views, and analytical layouts.",
+    accent: "from-sky-300 via-cyan-200 to-blue-100",
+  },
+  {
+    name: "Commerce",
+    description: "Pricing flows, product cards, carts, and purchase surfaces.",
+    accent: "from-lime-300 via-emerald-200 to-green-100",
+  },
+  {
+    name: "Paywall",
+    description: "Subscription gates, upgrade prompts, and monetization surfaces.",
+    accent: "from-teal-300 via-cyan-200 to-sky-100",
+  },
+  {
+    name: "Social",
+    description: "Profile modules, social timelines, and engagement widgets.",
+    accent: "from-fuchsia-300 via-rose-200 to-pink-100",
+  },
+  {
+    name: "Forms",
+    description: "Multi-step forms, auth screens, and polished field groups.",
+    accent: "from-violet-300 via-indigo-200 to-slate-100",
+  },
+  {
+    name: "Media",
+    description: "Galleries, players, carousels, and motion-heavy canvases.",
+    accent: "from-yellow-300 via-orange-200 to-neutral-100",
+  },
+] as const;
+
+type CategoryName = (typeof categories)[number]["name"];
+
+type SeedPattern =
+  | "tabBarOrbit"
+  | "sidebarFlow"
+  | "segmentedRail"
+  | "commandSheet"
+  | "metricsDeck"
+  | "opsBoard"
+  | "revenuePulse"
+  | "kpiHorizon"
+  | "checkoutStack"
+  | "pricingLens"
+  | "productSpotlight"
+  | "upsellDrawer"
+  | "profileGrid"
+  | "creatorThread"
+  | "storyShelf"
+  | "communityBanner"
+  | "onboardingFlow"
+  | "formWizard"
+  | "credentialPanel"
+  | "feedbackSteps"
+  | "audioShelf"
+  | "galleryStage"
+  | "episodeQueue"
+  | "videoSpotlight";
+
+type SeedComponent = {
+  slug: string;
+  title: string;
+  summary: string;
+  description: string;
+  changelog: string;
+  categoryName: CategoryName;
+  featured: boolean;
+  seed: number;
+  pattern: SeedPattern;
+};
+
+const sampleComponents: SeedComponent[] = [
+  {
+    slug: "aurora-tab-orbit",
+    title: "Aurora Tab Orbit",
+    summary: "A soft glass tab bar with floating active-state motion and capsule icons.",
+    description:
+      "Aurora Tab Orbit packages a SwiftUI tab bar with a polished frosted background, fluid selection movement, and a compact label system that works well for media or productivity apps.",
+    changelog: "Initial release with glass blur and matched geometry active state.",
+    categoryName: "Navigation",
+    featured: true,
+    seed: 1,
+    pattern: "tabBarOrbit",
+  },
+  {
+    slug: "harbor-metrics-deck",
+    title: "Harbor Metrics Deck",
+    summary: "A modular dashboard header with KPI strips, trend pills, and callout cards.",
+    description:
+      "Harbor Metrics Deck is designed for admin surfaces that need opinionated visual hierarchy, dense information, and a bright presentation inspired by editorial landing pages.",
+    changelog: "Added secondary metric rail and responsive card stacking.",
+    categoryName: "Dashboards",
+    featured: true,
+    seed: 2,
+    pattern: "metricsDeck",
+  },
+  {
+    slug: "linen-checkout-stack",
+    title: "Linen Checkout Stack",
+    summary: "A clean commerce checkout shell with step tracking and embedded order recap.",
+    description:
+      "Linen Checkout Stack blends structured summary cards, shipping selectors, and payment entry into a single SwiftUI composition aimed at bright storefront flows.",
+    changelog: "Refined spacing and added alternate promo-code drawer.",
+    categoryName: "Commerce",
+    featured: false,
+    seed: 3,
+    pattern: "checkoutStack",
+  },
+  {
+    slug: "pulse-profile-grid",
+    title: "Pulse Profile Grid",
+    summary: "A social profile surface with stats, pinned cards, and lively follow CTAs.",
+    description:
+      "Pulse Profile Grid brings together profile identity, post previews, and contextual action buttons in a single lightweight SwiftUI module.",
+    changelog: "Added pinned-story badges and denser grid breakpoints.",
+    categoryName: "Social",
+    featured: false,
+    seed: 4,
+    pattern: "profileGrid",
+  },
+  {
+    slug: "coda-onboarding-flow",
+    title: "Coda Onboarding Flow",
+    summary: "A multi-step onboarding experience with progress, illustrations, and trust copy.",
+    description:
+      "Coda Onboarding Flow is meant for product activation and auth-lite experiences, with spacious cards, progress feedback, and calm motion-driven affordances.",
+    changelog: "First approved release.",
+    categoryName: "Forms",
+    featured: false,
+    seed: 5,
+    pattern: "onboardingFlow",
+  },
+  {
+    slug: "ripple-audio-shelf",
+    title: "Ripple Audio Shelf",
+    summary: "An album shelf layout with floating controls, queue previews, and waveform accents.",
+    description:
+      "Ripple Audio Shelf is a brighter media component built for playlist surfaces, podcast pages, or gallery hybrids where previews matter.",
+    changelog: "Introduced compact player mode and queue hover state.",
+    categoryName: "Media",
+    featured: false,
+    seed: 6,
+    pattern: "audioShelf",
+  },
+  {
+    slug: "atlas-sidebar-flow",
+    title: "Atlas Sidebar Flow",
+    summary: "A compact sidebar shell with floating sections, active chips, and roomy content framing.",
+    description:
+      "Atlas Sidebar Flow is built for iPad-sized workspaces where quick navigation and a bright content preview need to coexist without feeling heavy.",
+    changelog: "Added compact quick-action footer and clearer selected-state treatment.",
+    categoryName: "Navigation",
+    featured: false,
+    seed: 7,
+    pattern: "sidebarFlow",
+  },
+  {
+    slug: "halo-segmented-rail",
+    title: "Halo Segmented Rail",
+    summary: "A segmented top rail for filters and routes with spring motion and soft highlight pills.",
+    description:
+      "Halo Segmented Rail is a versatile route switcher for catalogue pages, dashboards, or social surfaces that need a clean editorial header.",
+    changelog: "Updated card spacing and added brighter hover-style selection emphasis.",
+    categoryName: "Navigation",
+    featured: false,
+    seed: 8,
+    pattern: "segmentedRail",
+  },
+  {
+    slug: "drift-command-sheet",
+    title: "Drift Command Sheet",
+    summary: "A command-style route switcher with recent destinations, status dots, and keyboard-first affordances.",
+    description:
+      "Drift Command Sheet adapts a command palette pattern into SwiftUI, pairing search, recent routes, and quick links inside a calm floating panel.",
+    changelog: "Added recent-route grouping and improved destination badge hierarchy.",
+    categoryName: "Navigation",
+    featured: false,
+    seed: 9,
+    pattern: "commandSheet",
+  },
+  {
+    slug: "beacon-ops-board",
+    title: "Beacon Ops Board",
+    summary: "A bright operations board with incident cards, SLA chips, and live team readiness markers.",
+    description:
+      "Beacon Ops Board focuses on operational visibility, pairing status modules with readable urgency treatment for support or reliability teams.",
+    changelog: "Added response-owner cards and clearer escalation chips.",
+    categoryName: "Dashboards",
+    featured: false,
+    seed: 10,
+    pattern: "opsBoard",
+  },
+  {
+    slug: "northstar-revenue-pulse",
+    title: "Northstar Revenue Pulse",
+    summary: "A revenue snapshot strip with channel cards, pacing badges, and weekly forecast callouts.",
+    description:
+      "Northstar Revenue Pulse gives growth teams a bright hero summary with quick comparisons across channels and a simple forecast lane.",
+    changelog: "Tuned metric density and added pacing badge variants.",
+    categoryName: "Dashboards",
+    featured: false,
+    seed: 11,
+    pattern: "revenuePulse",
+  },
+  {
+    slug: "delta-kpi-horizon",
+    title: "Delta KPI Horizon",
+    summary: "A wide KPI hero with stacked deltas, comparison rails, and editorial chart framing.",
+    description:
+      "Delta KPI Horizon is meant for top-of-dashboard summaries where one key number should lead without flattening the supporting trend context.",
+    changelog: "Introduced stacked benchmark bars and softer trend-card gradients.",
+    categoryName: "Dashboards",
+    featured: false,
+    seed: 12,
+    pattern: "kpiHorizon",
+  },
+  {
+    slug: "meridian-pricing-lens",
+    title: "Meridian Pricing Lens",
+    summary: "A pricing comparison layout with annual savings, plan toggles, and standout CTA emphasis.",
+    description:
+      "Meridian Pricing Lens is a bright multi-plan pricing module designed for SaaS surfaces that need quick scanning and a clear featured tier.",
+    changelog: "Added annual toggle treatment and stronger featured-plan framing.",
+    categoryName: "Commerce",
+    featured: true,
+    seed: 13,
+    pattern: "pricingLens",
+  },
+  {
+    slug: "orchard-product-spotlight",
+    title: "Orchard Product Spotlight",
+    summary: "A product feature panel with gallery thumbnails, detail chips, and sticky purchase actions.",
+    description:
+      "Orchard Product Spotlight combines large media, compact option selectors, and concise product facts in a bright commerce showcase.",
+    changelog: "Refined thumbnail rhythm and added product detail chips.",
+    categoryName: "Commerce",
+    featured: false,
+    seed: 14,
+    pattern: "productSpotlight",
+  },
+  {
+    slug: "parcel-upsell-drawer",
+    title: "Parcel Upsell Drawer",
+    summary: "A post-cart upsell drawer with bundle options, delivery promises, and compact quantity controls.",
+    description:
+      "Parcel Upsell Drawer is tuned for checkout-adjacent moments where a lightweight bundle offer should feel additive instead of disruptive.",
+    changelog: "Added delivery reassurance copy and clearer bundle comparison cards.",
+    categoryName: "Commerce",
+    featured: false,
+    seed: 15,
+    pattern: "upsellDrawer",
+  },
+  {
+    slug: "echo-creator-thread",
+    title: "Echo Creator Thread",
+    summary: "A creator feed card with post rhythm, mini analytics, and expressive reaction clusters.",
+    description:
+      "Echo Creator Thread blends content and engagement metadata into a single bright card flow that works for creator profiles or team updates.",
+    changelog: "Added mini analytics rail and compact reaction grouping.",
+    categoryName: "Social",
+    featured: false,
+    seed: 16,
+    pattern: "creatorThread",
+  },
+  {
+    slug: "mosaic-story-shelf",
+    title: "Mosaic Story Shelf",
+    summary: "A layered story shelf with circular covers, unread glows, and stacked caption cards.",
+    description:
+      "Mosaic Story Shelf is designed for photo-heavy products that need a polished bridge between ephemeral stories and curated highlight cards.",
+    changelog: "Added unread ring gradients and denser caption spacing.",
+    categoryName: "Social",
+    featured: false,
+    seed: 17,
+    pattern: "storyShelf",
+  },
+  {
+    slug: "orbit-community-banner",
+    title: "Orbit Community Banner",
+    summary: "A community header with member presence, event pills, and inviting join actions.",
+    description:
+      "Orbit Community Banner is a bright community landing header that balances belonging signals, upcoming events, and onboarding actions.",
+    changelog: "Introduced event pills and member-presence avatars.",
+    categoryName: "Social",
+    featured: false,
+    seed: 18,
+    pattern: "communityBanner",
+  },
+  {
+    slug: "prism-form-wizard",
+    title: "Prism Form Wizard",
+    summary: "A multi-step data wizard with progress anchors, context tips, and spacious field cards.",
+    description:
+      "Prism Form Wizard packages a lightweight onboarding or application flow with clear progress, step context, and bright card-based fields.",
+    changelog: "Added step anchors and a cleaner summary sidebar.",
+    categoryName: "Forms",
+    featured: false,
+    seed: 19,
+    pattern: "formWizard",
+  },
+  {
+    slug: "canvas-credential-panel",
+    title: "Canvas Credential Panel",
+    summary: "A login and passkey panel with trust badges, recovery paths, and calm field hierarchy.",
+    description:
+      "Canvas Credential Panel is built for auth surfaces that need immediate clarity, minimal friction, and gentle trust reinforcement.",
+    changelog: "Added passkey emphasis and improved recovery-link rhythm.",
+    categoryName: "Forms",
+    featured: false,
+    seed: 20,
+    pattern: "credentialPanel",
+  },
+  {
+    slug: "ember-feedback-steps",
+    title: "Ember Feedback Steps",
+    summary: "A guided feedback composer with category chips, response controls, and contextual prompts.",
+    description:
+      "Ember Feedback Steps helps products collect thoughtful qualitative feedback by structuring intent, sentiment, and details into a guided flow.",
+    changelog: "Added chip states and clearer follow-up prompt grouping.",
+    categoryName: "Forms",
+    featured: false,
+    seed: 21,
+    pattern: "feedbackSteps",
+  },
+  {
+    slug: "nova-gallery-stage",
+    title: "Nova Gallery Stage",
+    summary: "A gallery stage with featured media, thumbnail rails, and polished caption overlays.",
+    description:
+      "Nova Gallery Stage is a bright media browser that keeps the hero asset front-and-center while still surfacing quick context and selection.",
+    changelog: "Improved thumbnail rhythm and softened caption overlay gradients.",
+    categoryName: "Media",
+    featured: true,
+    seed: 22,
+    pattern: "galleryStage",
+  },
+  {
+    slug: "tidal-episode-queue",
+    title: "Tidal Episode Queue",
+    summary: "A podcast queue layout with episode progress, download states, and listening shortcuts.",
+    description:
+      "Tidal Episode Queue is designed for podcast and audiobook surfaces that need to show progress, queue priority, and offline readiness at a glance.",
+    changelog: "Added compact download states and stronger now-playing emphasis.",
+    categoryName: "Media",
+    featured: false,
+    seed: 23,
+    pattern: "episodeQueue",
+  },
+  {
+    slug: "frame-video-spotlight",
+    title: "Frame Video Spotlight",
+    summary: "A video feature module with hero playback art, chapter markers, and compact side recommendations.",
+    description:
+      "Frame Video Spotlight gives streaming and education apps a polished hero module for featured content with quick chapter access and secondary picks.",
+    changelog: "Introduced chapter markers and refreshed side recommendation cards.",
+    categoryName: "Media",
+    featured: false,
+    seed: 24,
+    pattern: "videoSpotlight",
+  },
+] as const;
+
+const relatedCategoryNamesBySlug = new Map<string, CategoryName[]>([
+  ["harbor-metrics-deck", ["Commerce", "Paywall"]],
+  ["linen-checkout-stack", ["Forms"]],
+  ["pulse-profile-grid", ["Media", "Paywall"]],
+  ["coda-onboarding-flow", ["Navigation"]],
+  ["nova-gallery-stage", ["Social"]],
+  ["meridian-pricing-lens", ["Dashboards", "Paywall"]],
+  ["atlas-sidebar-flow", ["Paywall"]],
+]);
+
+const demoUsers = [
+  {
+    email: "creator@copymyui.dev",
+    name: "Demo Creator",
+    profileSlug: "demo-creator",
+    role: UserRole.USER,
+    image:
+      "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    email: "moderator@copymyui.dev",
+    name: "Demo Moderator",
+    profileSlug: "demo-moderator",
+    role: UserRole.MODERATOR,
+    image:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    email: "admin@copymyui.dev",
+    name: "Demo Admin",
+    profileSlug: "demo-admin",
+    role: UserRole.ADMIN,
+    image:
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
+  },
+  {
+    email: "fan@copymyui.dev",
+    name: "Demo Collector",
+    profileSlug: "demo-collector",
+    role: UserRole.USER,
+    image:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+  },
+] as const;
+
+const premiumPricingBySlug = new Map<string, number>([
+  ["harbor-metrics-deck", 10000],
+  ["meridian-pricing-lens", 12000],
+  ["coda-onboarding-flow", 8500],
+  ["nova-gallery-stage", 14000],
+]);
+
+const accentHexByCategory = new Map<CategoryName, string>([
+  ["Navigation", "#F97316"],
+  ["Dashboards", "#0EA5E9"],
+  ["Commerce", "#22C55E"],
+  ["Paywall", "#14B8A6"],
+  ["Social", "#EC4899"],
+  ["Forms", "#8B5CF6"],
+  ["Media", "#EAB308"],
+]);
+
+const swiftAccentByCategory = new Map<CategoryName, string>([
+  ["Navigation", "Color.orange"],
+  ["Dashboards", "Color.blue"],
+  ["Commerce", "Color.green"],
+  ["Paywall", "Color.teal"],
+  ["Social", "Color.pink"],
+  ["Forms", "Color.purple"],
+  ["Media", "Color.yellow"],
+]);
+
+function swiftStructName(title: string) {
+  return title.replace(/[^A-Za-z0-9]/g, "") || "CopyMyUIComponent";
+}
+
+function swiftAccent(categoryName: CategoryName) {
+  return swiftAccentByCategory.get(categoryName) ?? "Color.orange";
+}
+
+function navigationSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "tabBarOrbit":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @Namespace private var namespace
+    @State private var selection = "Discover"
+
+    private let accent = ${accent}
+    private let items = ["Discover", "Updates", "Saved", "Profile"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            Text("${component.title}")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+
+            Text("A bright floating tab bar with soft glass layers and compact destination labels.")
+                .foregroundStyle(.secondary)
+
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.26), .white],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 280)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Live preview")
+                            .font(.headline)
+                        Text("Use the selected tab to reveal contextual content while keeping the shell lightweight.")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(24)
+                }
+
+            HStack(spacing: 10) {
+                ForEach(items, id: \\.self) { item in
+                    Button {
+                        withAnimation(.spring(response: 0.34, dampingFraction: 0.78)) {
+                            selection = item
+                        }
+                    } label: {
+                        VStack(spacing: 8) {
+                            Image(systemName: item == "Saved" ? "heart" : "circle.grid.2x2.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                            Text(item)
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundStyle(selection == item ? accent : .primary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background {
+                            if selection == item {
+                                Capsule()
+                                    .fill(accent.opacity(0.18))
+                                    .matchedGeometryEffect(id: "selection", in: namespace)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(10)
+            .background(.ultraThinMaterial, in: Capsule())
+        }
+        .padding(24)
+        .background(Color(.systemBackground))
+    }
+}
+`;
+    case "sidebarFlow":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @State private var selection = "Workspace"
+
+    private let accent = ${accent}
+    private let sections = ["Workspace", "Projects", "Inbox", "Settings"]
+
+    var body: some View {
+        HStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("${component.title}")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+
+                Text("Compact route switching for bright editor or management layouts.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                ForEach(sections, id: \\.self) { section in
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                            selection = section
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            Circle()
+                                .fill(selection == section ? accent : accent.opacity(0.2))
+                                .frame(width: 10, height: 10)
+                            Text(section)
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(selection == section ? accent.opacity(0.12) : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(accent.opacity(0.14))
+                    .frame(height: 120)
+                    .overlay(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Quick action")
+                                .font(.headline)
+                            Text("Pin a frequent route or surface a compact call-to-action.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(18)
+                    }
+            }
+            .frame(width: 240)
+            .padding(20)
+            .background(.white, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 18) {
+                Text(selection)
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                Text("The content panel stretches while the navigation rail remains compact and readable.")
+                    .foregroundStyle(.secondary)
+
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.22), .white],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .overlay(alignment: .topLeading) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Preview canvas")
+                                .font(.headline)
+                            Text("Let content breathe while actions stay close to the rail.")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(24)
+                    }
+            }
+            .padding(24)
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "segmentedRail":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @Namespace private var namespace
+    @State private var selection = "Overview"
+
+    private let accent = ${accent}
+    private let segments = ["Overview", "Trending", "Saved", "Following"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            HStack(spacing: 8) {
+                ForEach(segments, id: \\.self) { segment in
+                    Button {
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.8)) {
+                            selection = segment
+                        }
+                    } label: {
+                        Text(segment)
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background {
+                                if selection == segment {
+                                    Capsule()
+                                        .fill(accent.opacity(0.18))
+                                        .matchedGeometryEffect(id: "segment", in: namespace)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(8)
+            .background(Color.white, in: Capsule())
+
+            VStack(spacing: 14) {
+                ForEach(0..<3, id: \\.self) { index in
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(index == 0 ? accent.opacity(0.18) : Color.white)
+                        .frame(height: index == 0 ? 180 : 96)
+                        .overlay(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(index == 0 ? selection : "Related panel \\(index)")
+                                    .font(.headline)
+                                Text("Segmented navigation keeps dense content bright and easy to scan.")
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(20)
+                        }
+                }
+            }
+        }
+        .padding(24)
+        .background(
+            LinearGradient(
+                colors: [accent.opacity(0.12), Color(.systemBackground)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+}
+`;
+    case "commandSheet":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @State private var query = ""
+
+    private let accent = ${accent}
+    private let commands = [
+        "Open billing settings",
+        "Jump to design assets",
+        "Review moderation queue",
+        "Create a new component"
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color.white)
+                .frame(height: 64)
+                .overlay {
+                    HStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundStyle(accent)
+                        TextField("Search commands or destinations", text: $query)
+                    }
+                    .padding(.horizontal, 18)
+                }
+
+            VStack(spacing: 12) {
+                ForEach(commands, id: \\.self) { command in
+                    HStack(spacing: 14) {
+                        Circle()
+                            .fill(accent.opacity(0.18))
+                            .frame(width: 36, height: 36)
+                            .overlay {
+                                Image(systemName: "sparkles")
+                                    .foregroundStyle(accent)
+                            }
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(command)
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            Text("Recent destination")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("⌘K")
+                            .font(.footnote.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(16)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                }
+            }
+        }
+        .padding(24)
+        .background(accent.opacity(0.08))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function dashboardSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "metricsDeck":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let metrics = [("ARR", "$2.8M"), ("Win rate", "34%"), ("Retention", "91%")]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            Text("${component.title}")
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+
+            HStack(spacing: 14) {
+                ForEach(metrics, id: \\.0) { metric in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(metric.0)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(metric.1)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.24), .white],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 280)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Primary insight")
+                            .font(.headline)
+                        Text("Use a large editorial hero for the leading metric, then tuck supporting trend cards underneath.")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(24)
+                }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "opsBoard":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let incidents = ["API latency", "Checkout retry spike", "Moderation backlog"]
+
+    var body: some View {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("${component.title}")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+
+                ForEach(incidents, id: \\.self) { incident in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(incident)
+                                .font(.headline)
+                            Text("Needs owner confirmation in the next 15 minutes.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("P1")
+                            .font(.footnote.weight(.bold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(accent.opacity(0.16), in: Capsule())
+                    }
+                    .padding(16)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Team readiness")
+                    .font(.headline)
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(accent.opacity(0.18))
+                    .frame(height: 180)
+                    .overlay {
+                        VStack(spacing: 10) {
+                            Text("94%")
+                                .font(.system(size: 42, weight: .bold, design: .rounded))
+                            Text("Rotation coverage")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white)
+                    .frame(height: 132)
+                    .overlay(alignment: .leading) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Escalation lane")
+                                .font(.headline)
+                            Text("Keep the secondary control block calm and readable.")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(18)
+                    }
+            }
+            .frame(width: 260)
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "revenuePulse":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let channels = [("Direct", "$184K"), ("Partners", "$96K"), ("Upsell", "$63K")]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(accent.opacity(0.18))
+                .frame(height: 180)
+                .overlay(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("$342K")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                        Text("Weekly pace • up 12% from last week")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(24)
+                }
+
+            HStack(spacing: 14) {
+                ForEach(channels, id: \\.0) { channel in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(channel.0)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Text(channel.1)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                        Text("Forecast on track")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(18)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "kpiHorizon":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let bars: [CGFloat] = [0.24, 0.48, 0.61, 0.72, 0.54, 0.86]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            HStack(alignment: .bottom, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Conversion")
+                        .font(.headline)
+                    Text("18.4%")
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                    Text("Compared with last 30 days")
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                HStack(alignment: .bottom, spacing: 10) {
+                    ForEach(Array(bars.enumerated()), id: \\.offset) { index, bar in
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(index == bars.count - 1 ? accent : accent.opacity(0.18))
+                            .frame(width: 24, height: 160 * bar + 24)
+                    }
+                }
+            }
+            .padding(24)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+
+            HStack(spacing: 14) {
+                ForEach(["Benchmark", "Target", "Actual"], id: \\.self) { label in
+                    Text(label)
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(accent.opacity(0.12), in: Capsule())
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function commerceSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "checkoutStack":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+
+    var body: some View {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("${component.title}")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+
+                ForEach(["Shipping details", "Payment method", "Delivery note"], id: \\.self) { section in
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(Color.white)
+                        .frame(height: 92)
+                        .overlay(alignment: .leading) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(section)
+                                    .font(.headline)
+                                Text("Bright fields and compact helper text keep the flow moving.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(18)
+                        }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Order recap")
+                    .font(.headline)
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(accent.opacity(0.16))
+                    .frame(height: 220)
+                    .overlay(alignment: .topLeading) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("$248.00")
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                            Text("Estimated total")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(20)
+                    }
+            }
+            .frame(width: 260)
+            .padding(18)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "pricingLens":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @State private var annual = true
+
+    private let accent = ${accent}
+    private let plans = ["Starter", "Scale", "Enterprise"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("${component.title}")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                Spacer()
+                Toggle("Annual", isOn: $annual)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+
+            HStack(spacing: 14) {
+                ForEach(plans, id: \\.self) { plan in
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(plan)
+                            .font(.headline)
+                        Text(plan == "Scale" ? "$42" : plan == "Starter" ? "$16" : "Custom")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                        Text(annual ? "per seat / billed annually" : "per seat / billed monthly")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(plan == "Scale" ? "Recommended" : "Explore")
+                            .font(.footnote.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(plan == "Scale" ? accent.opacity(0.18) : Color.black.opacity(0.05), in: Capsule())
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 240, alignment: .leading)
+                    .padding(20)
+                    .background(
+                        plan == "Scale" ? accent.opacity(0.12) : Color.white,
+                        in: RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    )
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "productSpotlight":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let swatches = [Color.orange, Color.pink, Color.blue]
+
+    var body: some View {
+        HStack(spacing: 18) {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.22), .white],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 320, height: 360)
+                .overlay(alignment: .bottomLeading) {
+                    Text("${component.title}")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .padding(22)
+                }
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Lightweight product showcase")
+                    .font(.headline)
+                Text("Feature key details, variants, and a calm purchase action without overwhelming the content.")
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 10) {
+                    ForEach(swatches, id: \\.description) { swatch in
+                        Circle()
+                            .fill(swatch)
+                            .frame(width: 28, height: 28)
+                    }
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(["Full-grain texture", "Two-day delivery", "Easy returns"], id: \\.self) { item in
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(accent)
+                            Text(item)
+                            Spacer()
+                        }
+                        .padding(14)
+                        .background(Color.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                }
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(accent)
+                    .frame(height: 54)
+                    .overlay {
+                        Text("Add to cart")
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                    }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "upsellDrawer":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let bundles = [("Travel set", "$18"), ("Care kit", "$12"), ("Gift wrap", "$6")]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            Text("Use a bright drawer to surface one or two highly relevant add-ons after cart review.")
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 12) {
+                ForEach(bundles, id: \\.0) { bundle in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(bundle.0)
+                                .font(.headline)
+                            Text("Ships with your main order")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(bundle.1)
+                            .font(.headline)
+                    }
+                    .padding(16)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(accent.opacity(0.18))
+                .frame(height: 84)
+                .overlay(alignment: .leading) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Bundle all three")
+                                .font(.headline)
+                            Text("Save 18% when added now")
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("Add")
+                            .font(.headline)
+                    }
+                    .padding(18)
+                }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function socialSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "profileGrid":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack(spacing: 16) {
+                Circle()
+                    .fill(accent.opacity(0.18))
+                    .frame(width: 84, height: 84)
+                    .overlay {
+                        Text("CM")
+                            .font(.headline)
+                    }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("${component.title}")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                    Text("12.4K followers • 214 posts")
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 104, height: 44)
+                    .overlay {
+                        Text("Follow")
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                    }
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                ForEach(0..<4, id: \\.self) { index in
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(index == 0 ? accent.opacity(0.18) : Color.white)
+                        .frame(height: index == 0 ? 180 : 120)
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "creatorThread":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let posts = ["Launch notes", "Behind the scenes", "Community prompt"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            ForEach(posts, id: \\.self) { post in
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Circle()
+                            .fill(accent.opacity(0.18))
+                            .frame(width: 42, height: 42)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(post)
+                                .font(.headline)
+                            Text("Shared 2 hours ago")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+
+                    Text("Pair social proof with compact analytics so creator surfaces feel alive without losing readability.")
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 14) {
+                        Label("128", systemImage: "heart")
+                        Label("42", systemImage: "arrowshape.turn.up.right")
+                        Label("19", systemImage: "message")
+                    }
+                    .font(.footnote.weight(.semibold))
+                }
+                .padding(18)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "storyShelf":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let stories = ["Alex", "Maya", "Jon", "Rina", "Kai"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(stories, id: \\.self) { story in
+                        VStack(spacing: 10) {
+                            Circle()
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [accent, accent.opacity(0.3)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 3
+                                )
+                                .frame(width: 72, height: 72)
+                                .overlay {
+                                    Circle()
+                                        .fill(accent.opacity(0.16))
+                                        .padding(6)
+                                }
+                            Text(story)
+                                .font(.footnote.weight(.semibold))
+                        }
+                    }
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color.white)
+                .frame(height: 220)
+                .overlay(alignment: .bottomLeading) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Curated highlight")
+                            .font(.headline)
+                        Text("Combine ephemeral circles with a larger story card below for variety.")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(20)
+                }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "communityBanner":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let events = ["Design critique", "Weekly ship", "Office hours"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.24), .white],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 220)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("${component.title}")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                        Text("Invite new members while surfacing upcoming moments that make the community feel active.")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(24)
+                }
+
+            HStack(spacing: 14) {
+                ForEach(events, id: \\.self) { event in
+                    Text(event)
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(Color.white, in: Capsule())
+                }
+            }
+
+            HStack {
+                Text("1,248 members online this week")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(accent)
+                    .frame(width: 122, height: 44)
+                    .overlay {
+                        Text("Join now")
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                    }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function formsSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "onboardingFlow":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @State private var step = 1
+
+    private let accent = ${accent}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            HStack(spacing: 8) {
+                ForEach(1..<4, id: \\.self) { index in
+                    Capsule()
+                        .fill(index <= step ? accent : accent.opacity(0.16))
+                        .frame(height: 8)
+                }
+            }
+
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(Color.white)
+                .frame(height: 320)
+                .overlay(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Step \\(step)")
+                            .font(.headline)
+                        Text("Guide users with one idea per screen, generous spacing, and a bright supportive illustration block.")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button {
+                            withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) {
+                                step = min(step + 1, 3)
+                            }
+                        } label: {
+                            Text("Continue")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(accent, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .padding(24)
+                }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "formWizard":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+
+    var body: some View {
+        HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("${component.title}")
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+
+                ForEach(["Company name", "Team size", "Primary goal"], id: \\.self) { field in
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white)
+                        .frame(height: 76)
+                        .overlay(alignment: .leading) {
+                            Text(field)
+                                .padding(.horizontal, 18)
+                                .foregroundStyle(.secondary)
+                        }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Progress")
+                    .font(.headline)
+
+                ForEach(["Basics", "Preferences", "Review"], id: \\.self) { step in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(step)
+                            .font(.footnote.weight(.semibold))
+                        Capsule()
+                            .fill(step == "Basics" ? accent : accent.opacity(0.14))
+                            .frame(height: 8)
+                    }
+                }
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(accent.opacity(0.16))
+                    .frame(height: 96)
+                    .overlay(alignment: .leading) {
+                        Text("Context tip")
+                            .font(.headline)
+                            .padding(.horizontal, 18)
+                    }
+            }
+            .frame(width: 240)
+            .padding(18)
+            .background(Color.white, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "credentialPanel":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            VStack(spacing: 12) {
+                ForEach(["Email address", "Password"], id: \\.self) { field in
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color.white)
+                        .frame(height: 64)
+                        .overlay(alignment: .leading) {
+                            Text(field)
+                                .padding(.horizontal, 18)
+                                .foregroundStyle(.secondary)
+                        }
+                }
+            }
+
+            HStack(spacing: 12) {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(accent)
+                    .frame(height: 50)
+                    .overlay {
+                        Text("Continue")
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                    }
+
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color.white)
+                    .frame(height: 50)
+                    .overlay {
+                        Label("Use passkey", systemImage: "faceid")
+                            .font(.headline)
+                    }
+            }
+
+            HStack(spacing: 12) {
+                ForEach(["Encrypted", "SOC2", "Recovery path"], id: \\.self) { badge in
+                    Text(badge)
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(accent.opacity(0.12), in: Capsule())
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "feedbackSteps":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    @State private var selection = "UX"
+
+    private let accent = ${accent}
+    private let categories = ["UX", "Performance", "Content", "Bug"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            HStack(spacing: 10) {
+                ForEach(categories, id: \\.self) { category in
+                    Text(category)
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        .background(selection == category ? accent.opacity(0.18) : Color.white, in: Capsule())
+                        .onTapGesture {
+                            selection = category
+                        }
+                }
+            }
+
+            HStack(spacing: 8) {
+                ForEach(0..<5, id: \\.self) { index in
+                    Image(systemName: index < 4 ? "star.fill" : "star")
+                        .foregroundStyle(accent)
+                }
+            }
+            .font(.title3)
+
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color.white)
+                .frame(height: 180)
+                .overlay(alignment: .topLeading) {
+                    Text("Tell us what felt easy, what felt unclear, and what you expected to happen next.")
+                        .padding(18)
+                        .foregroundStyle(.secondary)
+                }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function mediaSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  const structName = swiftStructName(component.title);
+  const accent = swiftAccent(component.categoryName);
+
+  switch (component.pattern) {
+    case "audioShelf":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let tracks = ["Golden Hour", "Night Shift", "Blue Line"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 18) {
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.28), .white],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 180, height: 180)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("${component.title}")
+                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                    Text("Curate a bright album shelf with compact controls and a simple track list.")
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 10) {
+                        ForEach(["backward.fill", "play.fill", "forward.fill"], id: \\.self) { icon in
+                            Circle()
+                                .fill(icon == "play.fill" ? accent : accent.opacity(0.14))
+                                .frame(width: 42, height: 42)
+                                .overlay {
+                                    Image(systemName: icon)
+                                        .foregroundStyle(icon == "play.fill" ? .white : accent)
+                                }
+                        }
+                    }
+                }
+            }
+
+            VStack(spacing: 12) {
+                ForEach(tracks, id: \\.self) { track in
+                    HStack {
+                        Text(track)
+                            .font(.headline)
+                        Spacer()
+                        Text("3:42")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(14)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "galleryStage":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            Text("${component.title}")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.18), .white],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(height: 300)
+                .overlay(alignment: .bottomLeading) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Featured capture")
+                            .font(.headline)
+                        Text("Keep captions light and push supporting thumbnails beneath the stage.")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(20)
+                }
+
+            HStack(spacing: 12) {
+                ForEach(0..<4, id: \\.self) { _ in
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.white)
+                        .frame(height: 84)
+                }
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "episodeQueue":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let episodes = ["Designing for focus", "The async state update", "Ship week recap"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(accent.opacity(0.16))
+                .frame(height: 170)
+                .overlay(alignment: .leading) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("${component.title}")
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                        Text("Now playing • 18 min left")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(20)
+                }
+
+            ForEach(episodes, id: \\.self) { episode in
+                HStack(spacing: 14) {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.white)
+                        .frame(width: 56, height: 56)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(episode)
+                            .font(.headline)
+                        Text("Downloaded • 42 min")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Circle()
+                        .fill(accent.opacity(0.16))
+                        .frame(width: 34, height: 34)
+                        .overlay {
+                            Image(systemName: "play.fill")
+                                .foregroundStyle(accent)
+                        }
+                }
+                .padding(14)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            }
+        }
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    case "videoSpotlight":
+      return `import SwiftUI
+
+struct ${structName}: View {
+    private let accent = ${accent}
+    private let chapters = ["Intro", "Setup", "Walkthrough", "Takeaways"]
+
+    var body: some View {
+        HStack(spacing: 18) {
+            RoundedRectangle(cornerRadius: 32, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [.black.opacity(0.76), accent.opacity(0.32)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .overlay {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 54))
+                        .foregroundStyle(.white)
+                }
+
+            VStack(alignment: .leading, spacing: 14) {
+                Text("${component.title}")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+
+                ForEach(chapters, id: \\.self) { chapter in
+                    HStack {
+                        Text(chapter)
+                            .font(.headline)
+                        Spacer()
+                        Text("04:12")
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(14)
+                    .background(Color.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+            }
+            .frame(width: 260)
+        }
+        .frame(height: 320)
+        .padding(24)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+`;
+    default:
+      return "";
+  }
+}
+
+function swiftCodeSnippet(component: Pick<SeedComponent, "title" | "pattern" | "categoryName">) {
+  switch (component.categoryName) {
+    case "Navigation":
+      return navigationSnippet(component);
+    case "Dashboards":
+      return dashboardSnippet(component);
+    case "Commerce":
+      return commerceSnippet(component);
+    case "Paywall":
+      return commerceSnippet(component);
+    case "Social":
+      return socialSnippet(component);
+    case "Forms":
+      return formsSnippet(component);
+    case "Media":
+      return mediaSnippet(component);
+  }
+}
+
+async function createScreenshotAsset(slug: string, title: string, accent: string) {
+  const directory = path.join(process.cwd(), "public", "seed-screenshots");
+  await mkdir(directory, { recursive: true });
+
+  const svgPath = path.join(directory, `${slug}.svg`);
+  const fullJpegPath = path.join(directory, `${slug}-full.jpg`);
+  const previewJpegPath = path.join(directory, `${slug}-preview.jpg`);
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1600" height="1100" viewBox="0 0 1600 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="1100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF9ED"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="${accent}22"/>
+    </linearGradient>
+    <linearGradient id="card" x1="250" y1="180" x2="1300" y2="930" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F8F5EF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1100" rx="48" fill="url(#bg)"/>
+  <circle cx="1360" cy="180" r="160" fill="${accent}25"/>
+  <circle cx="190" cy="980" r="200" fill="${accent}18"/>
+  <rect x="188" y="146" width="1224" height="788" rx="42" fill="url(#card)" stroke="#E5DDD1" stroke-width="2"/>
+  <rect x="248" y="214" width="396" height="44" rx="22" fill="${accent}18"/>
+  <text x="248" y="344" fill="#191615" font-family="Arial, sans-serif" font-size="74" font-weight="700">${title}</text>
+  <text x="248" y="404" fill="#6F645A" font-family="Arial, sans-serif" font-size="28">SwiftUI component preview generated by the CopyMyUI seed.</text>
+  <rect x="248" y="470" width="380" height="276" rx="34" fill="#FFF" stroke="#EFE6DB"/>
+  <rect x="672" y="470" width="468" height="276" rx="34" fill="${accent}10" stroke="${accent}35"/>
+  <rect x="248" y="786" width="892" height="84" rx="28" fill="#FCFAF6" stroke="#EFE6DB"/>
+  <rect x="1180" y="470" width="172" height="400" rx="34" fill="#FFF" stroke="#EFE6DB"/>
+  <rect x="280" y="515" width="220" height="22" rx="11" fill="${accent}26"/>
+  <rect x="280" y="560" width="310" height="16" rx="8" fill="#EDE2D6"/>
+  <rect x="280" y="598" width="270" height="16" rx="8" fill="#EDE2D6"/>
+  <rect x="704" y="516" width="212" height="20" rx="10" fill="${accent}32"/>
+  <rect x="704" y="564" width="364" height="18" rx="9" fill="#FFFFFF"/>
+  <rect x="704" y="608" width="318" height="18" rx="9" fill="#FFFFFF"/>
+  <rect x="1212" y="516" width="108" height="18" rx="9" fill="#EDE2D6"/>
+  <rect x="1212" y="562" width="92" height="18" rx="9" fill="#EDE2D6"/>
+  <rect x="1212" y="608" width="76" height="18" rx="9" fill="#EDE2D6"/>
+</svg>`;
+
+  await writeFile(svgPath, svg, "utf8");
+
+  const svgBuffer = Buffer.from(svg);
+  const [fullJpeg, previewJpeg] = await Promise.all([
+    sharp(svgBuffer)
+      .jpeg({
+        quality: 90,
+        chromaSubsampling: "4:4:4",
+        mozjpeg: true,
+      })
+      .toBuffer(),
+    sharp(svgBuffer)
+      .resize({
+        width: 768,
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: 72,
+        mozjpeg: true,
+      })
+      .toBuffer(),
+  ]);
+
+  await Promise.all([
+    writeFile(fullJpegPath, fullJpeg),
+    writeFile(previewJpegPath, previewJpeg),
+  ]);
+
+  return {
+    mediaType: "IMAGE" as const,
+    mimeType: "image/jpeg",
+    url: `/seed-screenshots/${slug}-full.jpg`,
+    storagePath: `seed-screenshots/${slug}-full.jpg`,
+    previewUrl: `/seed-screenshots/${slug}-preview.jpg`,
+    previewStoragePath: `seed-screenshots/${slug}-preview.jpg`,
+    altText: `${title} preview`,
+  };
+}
+
+async function main() {
+  await prisma.$transaction([
+    prisma.platformConfig.deleteMany(),
+    prisma.componentPurchase.deleteMany(),
+    prisma.apiKey.deleteMany(),
+    prisma.moderationLog.deleteMany(),
+    prisma.favorite.deleteMany(),
+    prisma.revisionScreenshot.deleteMany(),
+    prisma.componentRevision.deleteMany(),
+    prisma.componentCategory.deleteMany(),
+    prisma.component.deleteMany(),
+    prisma.categoryTranslation.deleteMany(),
+    prisma.category.deleteMany(),
+    prisma.session.deleteMany(),
+    prisma.account.deleteMany(),
+    prisma.user.deleteMany(),
+  ]);
+
+  const categoryByName = new Map<string, { id: string; accent: string }>();
+
+  for (const category of categories) {
+    const created = await prisma.category.create({
+      data: {
+        name: category.name,
+        slug: slugify(category.name, { lower: true, strict: true }),
+        description: category.description,
+        accent: category.accent,
+        translations: {
+          create: {
+            locale: "en",
+            name: category.name,
+            description: category.description,
+          },
+        },
+      },
+    });
+
+    categoryByName.set(category.name, {
+      id: created.id,
+      accent: accentHexByCategory.get(category.name) ?? "#F59E0B",
+    });
+  }
+
+  const users = new Map<string, { id: string; role: UserRole }>();
+
+  for (const user of demoUsers) {
+    const created = await prisma.user.create({ data: user });
+    users.set(user.email, { id: created.id, role: created.role });
+  }
+
+  const creatorId = users.get("creator@copymyui.dev")!.id;
+  const moderatorId = users.get("moderator@copymyui.dev")!.id;
+  const adminId = users.get("admin@copymyui.dev")!.id;
+  const fanId = users.get("fan@copymyui.dev")!.id;
+
+  await prisma.platformConfig.create({
+    data: {
+      id: 1,
+      premiumMarkupPercent: 35,
+      updatedById: adminId,
+    },
+  });
+
+  for (const component of sampleComponents) {
+    const category = categoryByName.get(component.categoryName)!;
+    const screenshot = await createScreenshotAsset(
+      component.slug,
+      component.title,
+      category.accent
+    );
+    const sellerTargetPriceCents = premiumPricingBySlug.get(component.slug) ?? null;
+    const accessType =
+      sellerTargetPriceCents !== null
+        ? ComponentAccessType.PREMIUM
+        : ComponentAccessType.FREE;
+    const ownerId =
+      component.categoryName === "Social" || component.categoryName === "Media"
+        ? fanId
+        : creatorId;
+
+    const categoryIds = [
+      category.id,
+      ...(relatedCategoryNamesBySlug
+        .get(component.slug)
+        ?.map((name) => categoryByName.get(name)?.id)
+        .filter((value): value is string => Boolean(value)) ?? []),
+    ].slice(0, 3);
+
+    const createdComponent = await prisma.component.create({
+      data: {
+        slug: component.slug,
+        ownerId,
+        primaryCategoryId: category.id,
+        status: ComponentStatus.APPROVED,
+        featured: component.featured,
+        categoryLinks: {
+          create: categoryIds.map((categoryId, index) => ({
+            categoryId,
+            sortOrder: index,
+          })),
+        },
+      },
+    });
+
+    const approvedRevision = await prisma.componentRevision.create({
+      data: {
+        componentId: createdComponent.id,
+        version: 1,
+        title: component.title,
+        summary: component.summary,
+        description: component.description,
+        swiftCode: swiftCodeSnippet(component),
+        changelog: component.changelog,
+        accessType,
+        sellerTargetPriceCents,
+        status: ComponentStatus.APPROVED,
+        submittedAt: new Date(Date.now() - component.seed * 86400000),
+        reviewedAt: new Date(Date.now() - component.seed * 64800000),
+        reviewerId: moderatorId,
+        reviewNote: "Approved for the public gallery.",
+        screenshots: {
+          create: [{ ...screenshot, sortOrder: 0 }],
+        },
+      },
+    });
+
+    await prisma.moderationLog.create({
+      data: {
+        revisionId: approvedRevision.id,
+        moderatorId,
+        decision: ModerationDecision.APPROVED,
+        note: "Approved for the public gallery.",
+      },
+    });
+
+    await prisma.component.update({
+      where: { id: createdComponent.id },
+      data: {
+        activeRevisionId: approvedRevision.id,
+        approvedRevisionId: approvedRevision.id,
+        publishedAt: approvedRevision.reviewedAt,
+      },
+    });
+
+    if (component.seed <= 8 || component.featured) {
+      await prisma.favorite.create({
+        data: {
+          componentId: createdComponent.id,
+          userId: fanId,
+        },
+      });
+    }
+  }
+
+  const publicComponents = await prisma.component.findMany();
+
+  for (const component of publicComponents) {
+    const favoritesCount = await prisma.favorite.count({
+      where: { componentId: component.id },
+    });
+
+    await prisma.component.update({
+      where: { id: component.id },
+      data: {
+        favoritesCount,
+      },
+    });
+  }
+
+  const aurora = await prisma.component.findUniqueOrThrow({
+    where: { slug: "aurora-tab-orbit" },
+    include: { approvedRevision: true },
+  });
+
+  const pendingUpdate = await prisma.componentRevision.create({
+    data: {
+      componentId: aurora.id,
+      version: 2,
+      title: aurora.approvedRevision!.title,
+      summary:
+        "An updated pending revision with denser captions and a cleaner active motion curve.",
+      description:
+        "This revision is queued for moderation and demonstrates the re-approval workflow: the original approved version remains public until a moderator approves the update.",
+      swiftCode: `${aurora.approvedRevision!.swiftCode}\n// Pending update revision`,
+      changelog: "Refined active state motion and adjusted icon spacing.",
+      status: ComponentStatus.PENDING_REVIEW,
+      submittedAt: new Date(),
+    },
+  });
+
+  await prisma.component.update({
+    where: { id: aurora.id },
+    data: {
+      status: ComponentStatus.PENDING_REVIEW,
+      activeRevisionId: pendingUpdate.id,
+    },
+  });
+
+  const formsCategory = categoryByName.get("Forms")!;
+  const declinedComponent = await prisma.component.create({
+    data: {
+      slug: "signal-auth-checkpoint",
+      ownerId: creatorId,
+      primaryCategoryId: formsCategory.id,
+      status: ComponentStatus.DECLINED,
+      categoryLinks: {
+        create: [
+          {
+            categoryId: formsCategory.id,
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+
+  const declinedRevision = await prisma.componentRevision.create({
+    data: {
+      componentId: declinedComponent.id,
+      version: 1,
+      title: "Signal Auth Checkpoint",
+      summary: "A bright auth checkpoint form that still needs a tighter layout hierarchy.",
+      description:
+        "This sample exists for the moderation dashboard and shows how declined work stays private until a creator ships a corrected revision.",
+      swiftCode: swiftCodeSnippet({
+        title: "Signal Auth Checkpoint",
+        categoryName: "Forms",
+        pattern: "credentialPanel",
+      }),
+      changelog: "Needs stronger hierarchy around the call-to-action.",
+      status: ComponentStatus.DECLINED,
+      submittedAt: new Date(Date.now() - 3600000),
+      reviewedAt: new Date(),
+      reviewerId: moderatorId,
+      reviewNote:
+        "Tighten the hierarchy between trust copy and the action area before publishing.",
+      screenshots: {
+        create: [
+          {
+            ...(await createScreenshotAsset(
+              "signal-auth-checkpoint",
+              "Signal Auth Checkpoint",
+              "#8B5CF6"
+            )),
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.moderationLog.create({
+    data: {
+      revisionId: declinedRevision.id,
+      moderatorId,
+      decision: ModerationDecision.DECLINED,
+      note: "Tighten the hierarchy between trust copy and the action area before publishing.",
+    },
+  });
+
+  await prisma.component.update({
+    where: { id: declinedComponent.id },
+    data: { activeRevisionId: declinedRevision.id },
+  });
+
+  const mediaCategory = categoryByName.get("Media")!;
+  const draftComponent = await prisma.component.create({
+    data: {
+      slug: "glow-podcast-stack",
+      ownerId: creatorId,
+      primaryCategoryId: mediaCategory.id,
+      status: ComponentStatus.DRAFT,
+      categoryLinks: {
+        create: [
+          {
+            categoryId: mediaCategory.id,
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+
+  const draftRevision = await prisma.componentRevision.create({
+    data: {
+      componentId: draftComponent.id,
+      version: 1,
+      title: "Glow Podcast Stack",
+      summary: "A private draft with stacked cards and pinned playback controls.",
+      description:
+        "This draft component illustrates the pre-public workflow where the owner can keep iterating before submitting for moderation.",
+      swiftCode: swiftCodeSnippet({
+        title: "Glow Podcast Stack",
+        categoryName: "Media",
+        pattern: "audioShelf",
+      }),
+      changelog: "Draft in progress.",
+      status: ComponentStatus.DRAFT,
+      screenshots: {
+        create: [
+          {
+            ...(await createScreenshotAsset(
+              "glow-podcast-stack",
+              "Glow Podcast Stack",
+              "#EAB308"
+            )),
+            sortOrder: 0,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.component.update({
+    where: { id: draftComponent.id },
+    data: { activeRevisionId: draftRevision.id },
+  });
+
+  const purchasedPremium = await prisma.component.findUniqueOrThrow({
+    where: { slug: "harbor-metrics-deck" },
+    include: {
+      approvedRevision: true,
+    },
+  });
+
+  await prisma.componentPurchase.create({
+    data: {
+      componentId: purchasedPremium.id,
+      buyerId: fanId,
+      sellerId: purchasedPremium.ownerId,
+      approvedRevisionId: purchasedPremium.approvedRevision!.id,
+      sellerTargetPriceCents: purchasedPremium.approvedRevision!.sellerTargetPriceCents!,
+      platformMarkupPercent: 35,
+      platformFeeCents: 3500,
+      salePriceCents: 13500,
+    },
+  });
+
+  await rebuildApprovedComponentSearchIndex(prisma);
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error(error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
