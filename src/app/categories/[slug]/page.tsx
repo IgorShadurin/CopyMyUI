@@ -6,6 +6,7 @@ import { ComponentCard } from "@/components/component-card";
 import { EmptyState } from "@/components/empty-state";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
+import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
 import { listCategories } from "@/lib/server/component-service";
 import { getPublicCategoryPageData } from "@/lib/server/category-service";
@@ -76,7 +77,11 @@ export default async function CategoryPage({
           <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
               <div className="max-w-3xl">
-                <h1 className="text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+                <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+                  <CategoryIcon
+                    slug={categoryPage.category.slug}
+                    className="size-7 shrink-0 text-muted-foreground sm:size-8"
+                  />
                   {category.name}
                 </h1>
                 <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">

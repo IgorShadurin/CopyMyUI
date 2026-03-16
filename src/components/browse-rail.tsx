@@ -9,10 +9,12 @@ import {
 } from "lucide-react";
 
 import { buttonVariants } from "@/components/ui/button-variants";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { type AppLocale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { withLocalePath } from "@/i18n/routing";
 import { translateCategory } from "@/i18n/server";
+import { CategoryIcon } from "@/lib/category-icons";
 import { cn } from "@/lib/utils";
 import { type Viewer } from "@/lib/viewer";
 
@@ -132,22 +134,16 @@ function BrowseRailContent({
           </div>
         ) : null}
 
-        <button
+        <AppActionButton
           type="submit"
-          className={cn(
-            buttonVariants({ size: "sm" }),
-            "h-11 w-full rounded-[1rem] justify-center"
-          )}
+          uiSize="lg"
+          icon={showAdvancedFilters ? <SlidersHorizontal className="size-4" /> : <Search className="size-4" />}
+          className="w-full justify-center"
         >
-          {showAdvancedFilters ? (
-            <SlidersHorizontal className="size-4" />
-          ) : (
-            <Search className="size-4" />
-          )}
           {showAdvancedFilters
             ? messages.explorePage.updateFilters
             : messages.home.exploreComponents}
-        </button>
+        </AppActionButton>
       </form>
 
       <div className="mt-4 border-t border-black/6 pt-4">
@@ -176,7 +172,10 @@ function BrowseRailContent({
                 data-testid={`browse-category-link-${panelId}-${category.slug}`}
                 className={railLinkClass(active)}
               >
-                <span>{translatedCategory.name}</span>
+                <span className="inline-flex items-center gap-2">
+                  <CategoryIcon slug={category.slug} className="size-4" />
+                  <span>{translatedCategory.name}</span>
+                </span>
                 <ChevronRight className="size-4 opacity-55" />
               </Link>
             );

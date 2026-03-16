@@ -12,11 +12,13 @@ import {
 } from "lucide-react";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { GoogleIcon } from "@/components/icons/google-icon";
 import { type AppLocale } from "@/i18n/config";
 import type { Messages } from "@/i18n/messages";
 import { withLocalePath } from "@/i18n/routing";
 import { type Viewer } from "@/lib/viewer";
 import { googleSignInAction, signOutAction } from "@/lib/actions/auth-actions";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
@@ -77,13 +79,6 @@ export function SiteHeader({
         <div className="hidden items-center gap-3 xl:flex">
           {viewer ? (
             <>
-              <Link
-                href={withLocalePath(locale, "/dashboard/components/new")}
-                className={cn(buttonVariants({ size: "sm" }), "rounded-full")}
-              >
-                <Plus className="size-4" />
-                {messages.header.newComponent}
-              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className={cn(
@@ -126,6 +121,13 @@ export function SiteHeader({
                   </div>
 
                   <div className="grid gap-1 rounded-[1rem] border border-black/6 bg-white/90 p-1.5">
+                    <DropdownMenuItem
+                      render={<Link href={withLocalePath(locale, "/dashboard/components/new")} />}
+                      className="justify-start rounded-[0.8rem] px-3 py-2.5"
+                    >
+                      <Plus className="size-4" />
+                      {messages.header.newComponent}
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       render={<Link href={withLocalePath(locale, "/dashboard")} />}
                       className="justify-start rounded-[0.8rem] px-3 py-2.5"
@@ -179,9 +181,9 @@ export function SiteHeader({
             </>
           ) : (
             <form action={googleSignInAction}>
-              <Button type="submit" size="sm" className="rounded-full">
+              <AppActionButton type="submit" uiSize="lg" icon={<GoogleIcon />}>
                 {messages.header.signInWithGoogle}
-              </Button>
+              </AppActionButton>
             </form>
           )}
           <LocaleSwitcher
@@ -195,9 +197,9 @@ export function SiteHeader({
         <div className="flex items-center gap-2 xl:hidden">
           {!viewer ? (
             <form action={googleSignInAction}>
-              <Button type="submit" size="sm" className="rounded-full px-4 sm:px-5">
+              <AppActionButton type="submit" uiSize="lg" icon={<GoogleIcon />} className="px-4 sm:px-5">
                 {messages.header.signInWithGoogle}
-              </Button>
+              </AppActionButton>
             </form>
           ) : null}
 
@@ -347,9 +349,9 @@ export function SiteHeader({
                   </div>
                 ) : (
                   <form action={googleSignInAction}>
-                    <Button type="submit" size="sm" className="w-full rounded-full">
+                    <AppActionButton type="submit" uiSize="lg" icon={<GoogleIcon />} className="w-full">
                       {messages.header.signInWithGoogle}
-                    </Button>
+                    </AppActionButton>
                   </form>
                 )}
               </div>

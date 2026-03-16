@@ -13,6 +13,7 @@ import { withLocalePath } from "@/i18n/routing";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
 import { startRevisionDraftAction } from "@/lib/actions/component-actions";
+import { CategoryIcon } from "@/lib/category-icons";
 import { formatUsdCents } from "@/lib/pricing";
 import { listApiKeysForUser } from "@/lib/server/api-key-service";
 import { getDashboardData } from "@/lib/server/component-service";
@@ -77,13 +78,14 @@ export default async function DashboardPage({
 
       {components.length > 0 ? (
         <section className="grid gap-6">
-          {components.map((component) => (
-            <Card
-              key={component.id}
-              data-testid={`dashboard-component-${component.slug}`}
-              className="rounded-[1.8rem] border border-black/6 bg-white/88 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]"
-            >
-              <CardContent className="grid gap-5 px-5 py-5 sm:px-6 sm:py-6 lg:grid-cols-[160px_1fr_auto] lg:items-center">
+          {components.map((component) => {
+            return (
+              <Card
+                key={component.id}
+                data-testid={`dashboard-component-${component.slug}`}
+                className="rounded-[1.8rem] border border-black/6 bg-white/88 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]"
+              >
+                <CardContent className="grid gap-5 px-5 py-5 sm:px-6 sm:py-6 lg:grid-cols-[160px_1fr_auto] lg:items-center">
                 <div className="overflow-hidden rounded-[1.4rem] border border-black/6 bg-[linear-gradient(135deg,#fff8ea_0%,#ffffff_56%,#ecfeff_100%)]">
                   <Image
                     src={component.previewImage ?? "/seed-screenshots/aurora-tab-orbit.svg"}
@@ -98,7 +100,8 @@ export default async function DashboardPage({
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
                     <StatusBadge status={component.status} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      <CategoryIcon slug={component.category.slug} className="size-3.5" />
                       {translateCategory(component.category, messages, locale).name}
                     </span>
                     {component.accessType === "PREMIUM" && component.salePriceCents ? (
@@ -155,7 +158,8 @@ export default async function DashboardPage({
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </section>
       ) : (
         <EmptyState

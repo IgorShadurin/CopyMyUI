@@ -2,12 +2,13 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ArrowRight, ChevronRight, Crown, Library } from "lucide-react";
+import { ArrowRight, Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles, Star } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCard } from "@/components/component-card";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
+import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getHomepageData, listCategories } from "@/lib/server/component-service";
@@ -94,7 +95,8 @@ export default async function Home() {
                   href={withLocalePath(locale, "/components")}
                   className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
                 >
-                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Star className="size-4 text-muted-foreground" />
                     {messages.home.topRatedEyebrow}
                   </p>
                   <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
@@ -107,7 +109,8 @@ export default async function Home() {
                   href={withLocalePath(locale, "/components?access=premium")}
                   className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
                 >
-                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Crown className="size-4 text-muted-foreground" />
                     {messages.home.premiumEyebrow}
                   </p>
                   <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
@@ -120,7 +123,8 @@ export default async function Home() {
                   href={withLocalePath(locale, "/components?sort=newest")}
                   className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
                 >
-                  <p className="line-clamp-2 text-sm font-medium text-foreground">
+                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <Sparkles className="size-4 text-muted-foreground" />
                     {messages.home.newestEyebrow}
                   </p>
                   <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
@@ -135,7 +139,8 @@ export default async function Home() {
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
             <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
               <div>
-                <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                  <Bookmark className="size-8 text-muted-foreground" />
                   {messages.home.topRatedEyebrow}
                 </h2>
               </div>
@@ -158,19 +163,25 @@ export default async function Home() {
 
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
             <div className="border-b border-black/6 pb-4">
-              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <Grid2X2 className="size-8 text-muted-foreground" />
                 {messages.home.categoryLeadersEyebrow}
               </h2>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {homepage.categoryHighlights.map((highlight) =>
-                highlight.component ? (
+              {homepage.categoryHighlights.map((highlight) => {
+                if (!highlight.component) {
+                  return null;
+                }
+
+                return (
                   <Link
                     key={highlight.id}
                     href={withLocalePath(locale, `/categories/${highlight.slug}`)}
                     className="group rounded-[1.6rem] border border-black/6 bg-[rgba(252,251,247,0.96)] p-4 transition-colors hover:bg-white"
                   >
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                      <CategoryIcon slug={highlight.slug} className="size-4" />
                       {translateCategory(highlight, messages, locale).name}
                     </p>
                     <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
@@ -190,8 +201,8 @@ export default async function Home() {
                       />
                     </div>
                   </Link>
-                ) : null
-              )}
+                );
+              })}
             </div>
           </section>
 
@@ -199,7 +210,8 @@ export default async function Home() {
             <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
               <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                  <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                    <Crown className="size-8 text-muted-foreground" />
                     {messages.home.premiumEyebrow}
                   </h2>
                 </div>
@@ -223,7 +235,8 @@ export default async function Home() {
 
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
             <div className="border-b border-black/6 pb-4">
-              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
+                <Sparkles className="size-8 text-muted-foreground" />
                 {messages.home.newestEyebrow}
               </h2>
             </div>

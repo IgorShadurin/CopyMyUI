@@ -89,7 +89,7 @@
   }
 
   html {
-    @apply scroll-smooth;
+    scroll-behavior: auto;
   }
 
   body {
@@ -105,5 +105,35 @@
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
+  }
+
+  .code-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  }
+
+  .code-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .code-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .code-scrollbar::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.25);
+    background-clip: padding-box;
+  }
+
+  .code-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.36);
+    background-clip: padding-box;
+  }
+
+  .code-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
   }
 }

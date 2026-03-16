@@ -1,11 +1,12 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { Crown, Layers3, Lock, PanelTop, Tag } from "lucide-react";
+import { Crown, Layers3, Lock, PanelTop } from "lucide-react";
 
 import { CodeCopyButton } from "@/components/code-copy-button";
+import { CodePreview } from "@/components/code-preview";
+import { ComponentMediaGallery } from "@/components/component-media-gallery";
 import { PageNotice } from "@/components/page-notice";
 import { StatusBadge } from "@/components/status-badge";
 import { getI18n, translateCategory } from "@/i18n/server";
@@ -13,6 +14,7 @@ import { withLocalePath } from "@/i18n/routing";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
 import { purchasePremiumComponentAction } from "@/lib/actions/marketplace-actions";
+import { CategoryIcon } from "@/lib/category-icons";
 import { formatUsdCents } from "@/lib/pricing";
 import { createPageMetadata } from "@/lib/seo";
 import { getPublicComponentBySlug } from "@/lib/server/component-service";
@@ -163,9 +165,9 @@ export default async function ComponentDetailPage({
         <PageNotice tone="info" message={query.purchaseError} />
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
-        <Card className="order-3 rounded-[1.8rem] border border-black/6 bg-[#121010] text-white shadow-[0_35px_90px_-45px_rgba(21,16,10,0.7)] sm:rounded-[2rem] xl:order-1">
-          <CardContent className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+      <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr] xl:items-start">
+        <Card className="order-3 rounded-[1.8rem] border border-black/6 bg-[#121010] py-0 text-white shadow-[0_35px_90px_-45px_rgba(21,16,10,0.7)] sm:rounded-[2rem] xl:order-1 xl:self-start">
+          <CardContent className="flex flex-col gap-5 px-5 pt-5 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/50">
@@ -175,14 +177,22 @@ export default async function ComponentDetailPage({
                   {messages.detailPage.swiftSourceTitle}
                 </h2>
               </div>
-              {component.swiftCode ? <CodeCopyButton code={component.swiftCode} /> : null}
+              {component.swiftCode ? (
+                <CodeCopyButton
+                  code={component.swiftCode}
+                  isAuthenticated={Boolean(viewer)}
+                  nextPath={withLocalePath(locale, `/components/${component.slug}`)}
+                />
+              ) : null}
             </div>
             {component.swiftCode ? (
-              <pre className="overflow-x-auto rounded-[1.6rem] border border-white/10 bg-white/5 p-4 text-[12px] leading-6 text-white/85 sm:p-5 sm:text-[13px]">
-                <code>{component.swiftCode}</code>
-              </pre>
+              <CodePreview
+                code={component.swiftCode}
+                className="xl:min-h-0 xl:flex-1"
+                desktopAlignBottomToId="component-detail-right-column"
+              />
             ) : (
-              <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-8">
+              <div className="rounded-[1.6rem] border border-white/10 bg-white/5 p-8 xl:flex-1">
                 <div className="flex items-start gap-4">
                   <div className="rounded-full bg-white/10 p-3">
                     <Lock className="size-5 text-white" />
@@ -228,7 +238,7 @@ export default async function ComponentDetailPage({
           </CardContent>
         </Card>
 
-        <div className="order-1 space-y-4 xl:order-2">
+        <div id="component-detail-right-column" className="order-1 space-y-4 xl:order-2 xl:self-start">
           <Card className="rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]">
             <CardContent className="space-y-3 px-4 py-4 sm:px-5 sm:py-5">
               <div>
@@ -247,7 +257,7 @@ export default async function ComponentDetailPage({
                   href={withLocalePath(locale, `/categories/${component.category.slug}`)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground"
                 >
-                  <Tag className="size-3.5" />
+                  <CategoryIcon slug={component.category.slug} className="size-3.5" />
                   {category.name}
                 </Link>
                 <div className="ml-auto text-right">
@@ -267,24 +277,7 @@ export default async function ComponentDetailPage({
           {component.screenshots[0] ? (
             <Card className="overflow-hidden rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]">
               <CardContent className="p-2 sm:p-3">
-                {isVideoMedia(component.screenshots[0]) ? (
-                  <video
-                    src={component.screenshots[0].url}
-                    controls
-                    preload="metadata"
-                    playsInline
-                    className="w-full rounded-[1.2rem] object-cover sm:rounded-[1.4rem]"
-                  />
-                ) : (
-                  <Image
-                    src={component.screenshots[0].url}
-                    alt={component.screenshots[0].altText}
-                    width={1800}
-                    height={1200}
-                    unoptimized
-                    className="w-full rounded-[1.2rem] object-cover sm:rounded-[1.4rem]"
-                  />
-                )}
+                <ComponentMediaGallery items={component.screenshots} />
               </CardContent>
             </Card>
           ) : null}

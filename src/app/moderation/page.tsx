@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { reviewComponentAction } from "@/lib/actions/component-actions";
+import { CategoryIcon } from "@/lib/category-icons";
 import {
   getModerationQueue,
   listCategories,
@@ -81,23 +82,25 @@ export default async function ModerationPage({
 
       {queue.length > 0 ? (
         <section className="grid gap-8">
-          {queue.map((item) => (
-            <Card
-              key={item.id}
-              data-testid={`moderation-component-${item.slug}`}
-              className="rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]"
-            >
-              <CardContent className="grid gap-5 px-5 py-5 sm:px-6 sm:py-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <StatusBadge status={item.pendingRevision?.status ?? "PENDING_REVIEW"} />
-                    <span className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                      {translateCategory(item.category, messages, locale).name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {messages.common.by} {item.owner.name ?? item.owner.email}
-                    </span>
-                  </div>
+          {queue.map((item) => {
+            return (
+              <Card
+                key={item.id}
+                data-testid={`moderation-component-${item.slug}`}
+                className="rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_32px_80px_-48px_rgba(22,18,12,0.5)] sm:rounded-[2rem]"
+              >
+                <CardContent className="grid gap-5 px-5 py-5 sm:px-6 sm:py-6 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className="space-y-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <StatusBadge status={item.pendingRevision?.status ?? "PENDING_REVIEW"} />
+                      <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        <CategoryIcon slug={item.category.slug} className="size-3.5" />
+                        {translateCategory(item.category, messages, locale).name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {messages.common.by} {item.owner.name ?? item.owner.email}
+                      </span>
+                    </div>
                   <div>
                     <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                       {item.title}
@@ -189,7 +192,8 @@ export default async function ModerationPage({
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </section>
       ) : (
         <EmptyState

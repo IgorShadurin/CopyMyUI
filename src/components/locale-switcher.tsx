@@ -15,6 +15,13 @@ import { locales, type AppLocale } from "@/i18n/config";
 import { switchLocaleInPath } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
+const localeFlags: Record<AppLocale, string> = {
+  en: "🇺🇸",
+  es: "🇪🇸",
+  ru: "🇷🇺",
+  de: "🇩🇪",
+};
+
 export function LocaleSwitcher({
   locale,
   label,
@@ -48,7 +55,7 @@ export function LocaleSwitcher({
           aria-label={label}
           className={cn(
             buttonVariants({ variant: "outline", size: "sm" }),
-            "min-w-[8.75rem] justify-between rounded-full border-black/8 bg-white/85 px-4 shadow-sm"
+            "h-11 min-w-[8.75rem] justify-between rounded-full border-black/8 bg-white/85 px-4 shadow-sm"
           )}
         >
           <span className="truncate">{languageLabels[locale]}</span>
@@ -67,7 +74,12 @@ export function LocaleSwitcher({
                 className="rounded-xl px-3 py-2.5 text-sm"
                 onClick={() => navigateToLocale(item)}
               >
-                {languageLabels[item]}
+                <span className="inline-flex items-center gap-2">
+                  <span aria-hidden="true" className="text-base">
+                    {localeFlags[item]}
+                  </span>
+                  <span>{languageLabels[item]}</span>
+                </span>
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

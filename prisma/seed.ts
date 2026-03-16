@@ -1,6 +1,6 @@
 import "dotenv/config";
 
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
@@ -171,6 +171,19 @@ const sampleComponents: SeedComponent[] = [
     categoryName: "Media",
     featured: false,
     seed: 6,
+    pattern: "audioShelf",
+  },
+  {
+    slug: "audio-trimmer",
+    title: "Audio Trimmer",
+    summary:
+      "A waveform trimmer with draggable start/end handles and a precise playback cursor.",
+    description:
+      "Audio Trimmer is a focused SwiftUI editing surface for clipping voice notes and podcast moments with direct-manipulation controls and clear selection feedback.",
+    changelog: "Seeded from production audio editor code with real media preview assets.",
+    categoryName: "Media",
+    featured: false,
+    seed: 25,
     pattern: "audioShelf",
   },
   {
@@ -2028,6 +2041,10 @@ async function main() {
   ]);
 
   const categoryByName = new Map<string, { id: string; accent: string }>();
+  const audioTrimmerSwiftCode = await readFile(
+    path.join(process.cwd(), "prisma", "seed-code", "audio-trimmer.swift"),
+    "utf8"
+  );
 
   for (const category of categories) {
     const created = await prisma.category.create({
@@ -2074,18 +2091,43 @@ async function main() {
 
   for (const component of sampleComponents) {
     const category = categoryByName.get(component.categoryName)!;
-    const screenshot = await createScreenshotAsset(
-      component.slug,
-      component.title,
-      category.accent
-    );
+    const screenshots =
+      component.slug === "audio-trimmer"
+        ? [
+            {
+              mediaType: "IMAGE" as const,
+              mimeType: "image/jpeg",
+              url: "/seed-screenshots/audio-trimmer-full.jpg",
+              storagePath: "seed-screenshots/audio-trimmer-full.jpg",
+              previewUrl: "/seed-screenshots/audio-trimmer-preview.jpg",
+              previewStoragePath: "seed-screenshots/audio-trimmer-preview.jpg",
+              altText: "Audio Trimmer preview",
+            },
+            {
+              mediaType: "VIDEO" as const,
+              mimeType: "video/mp4",
+              url: "/seed-videos/audio-trimmer.mp4",
+              storagePath: "seed-videos/audio-trimmer.mp4",
+              previewUrl: "/seed-screenshots/audio-trimmer-preview.jpg",
+              previewStoragePath: "seed-screenshots/audio-trimmer-preview.jpg",
+              altText: "Audio Trimmer demo video",
+            },
+          ]
+        : [
+            await createScreenshotAsset(
+              component.slug,
+              component.title,
+              category.accent
+            ),
+          ];
     const sellerTargetPriceCents = premiumPricingBySlug.get(component.slug) ?? null;
     const accessType =
       sellerTargetPriceCents !== null
         ? ComponentAccessType.PREMIUM
         : ComponentAccessType.FREE;
     const ownerId =
-      component.categoryName === "Social" || component.categoryName === "Media"
+      component.categoryName === "Social" ||
+      component.categoryName === "Media"
         ? fanId
         : creatorId;
 
@@ -2120,7 +2162,10 @@ async function main() {
         title: component.title,
         summary: component.summary,
         description: component.description,
-        swiftCode: swiftCodeSnippet(component),
+        swiftCode:
+          component.slug === "audio-trimmer"
+            ? audioTrimmerSwiftCode
+            : swiftCodeSnippet(component),
         changelog: component.changelog,
         accessType,
         sellerTargetPriceCents,
@@ -2130,7 +2175,10 @@ async function main() {
         reviewerId: moderatorId,
         reviewNote: "Approved for the public gallery.",
         screenshots: {
-          create: [{ ...screenshot, sortOrder: 0 }],
+          create: screenshots.map((screenshot, index) => ({
+            ...screenshot,
+            sortOrder: index,
+          })),
         },
       },
     });

@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import { type AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
+import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
 import { normalizeSearchQuery } from "@/lib/search";
 import { listCategories, listPublicComponents } from "@/lib/server/component-service";
@@ -232,7 +233,8 @@ export default async function ComponentsPage({
                     </span>
                   ) : null}
                   {activeCategory ? (
-                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      <CategoryIcon slug={activeCategory.slug} className="size-4" />
                       {translateCategory(activeCategory, messages, locale).name}
                     </span>
                   ) : null}

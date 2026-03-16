@@ -39,7 +39,7 @@ const en = {
   },
   footer: {
     description:
-      "Private drafting, moderated publishing, and reusable SwiftUI components in one place.",
+      "Find polished SwiftUI components, save favorites, and ship iOS screens faster with ready-to-use code.",
     exploreComponents: "Explore components",
     creatorDashboard: "Creator dashboard",
     xLabel: "X / Web3Igor",
@@ -405,6 +405,11 @@ const en = {
   codeCopy: {
     button: "Copy code",
     copied: "SwiftUI code copied.",
+    expand: "Show full code",
+    collapse: "Collapse code",
+    authRequiredTitle: "Sign in to copy code",
+    authRequiredDescription:
+      "Continue with Google to copy the SwiftUI source and return to this component.",
   },
   notFound: {
     eyebrow: "Not found",
@@ -502,7 +507,7 @@ const es: typeof en = {
   },
   footer: {
     description:
-      "Borradores privados, publicación moderada y componentes SwiftUI reutilizables en un solo lugar.",
+      "Descubre componentes SwiftUI pulidos, guarda favoritos y crea pantallas iOS más rápido con código listo para usar.",
     exploreComponents: "Explorar componentes",
     creatorDashboard: "Panel del creador",
     xLabel: "X / Web3Igor",
@@ -871,6 +876,11 @@ const es: typeof en = {
   codeCopy: {
     button: "Copiar código",
     copied: "Código SwiftUI copiado.",
+    expand: "Ver código completo",
+    collapse: "Ocultar código",
+    authRequiredTitle: "Inicia sesión para copiar el código",
+    authRequiredDescription:
+      "Continúa con Google para copiar el código SwiftUI y volver a este componente.",
   },
   notFound: {
     eyebrow: "No encontrado",
@@ -968,7 +978,7 @@ const ru: typeof en = {
   },
   footer: {
     description:
-      "Приватные черновики, публикация через модерацию и переиспользуемые SwiftUI-компоненты в одном месте.",
+      "Находите качественные SwiftUI-компоненты, сохраняйте избранное и быстрее собирайте iOS-экраны на готовом коде.",
     exploreComponents: "Смотреть компоненты",
     creatorDashboard: "Панель автора",
     xLabel: "X / Web3Igor",
@@ -1337,6 +1347,11 @@ const ru: typeof en = {
   codeCopy: {
     button: "Копировать код",
     copied: "SwiftUI-код скопирован.",
+    expand: "Показать код полностью",
+    collapse: "Свернуть код",
+    authRequiredTitle: "Войдите, чтобы копировать код",
+    authRequiredDescription:
+      "Продолжите через Google, чтобы скопировать SwiftUI-код и вернуться к этому компоненту.",
   },
   notFound: {
     eyebrow: "Не найдено",
@@ -1434,7 +1449,7 @@ const de: typeof en = {
   },
   footer: {
     description:
-      "Private Entwürfe, moderierte Veröffentlichung und wiederverwendbare SwiftUI-Komponenten an einem Ort.",
+      "Finde hochwertige SwiftUI-Komponenten, speichere Favoriten und baue iOS-Screens schneller mit sofort nutzbarem Code.",
     exploreComponents: "Komponenten entdecken",
     creatorDashboard: "Creator-Dashboard",
     xLabel: "X / Web3Igor",
@@ -1803,6 +1818,11 @@ const de: typeof en = {
   codeCopy: {
     button: "Code kopieren",
     copied: "SwiftUI-Code kopiert.",
+    expand: "Vollständigen Code anzeigen",
+    collapse: "Code einklappen",
+    authRequiredTitle: "Anmelden, um Code zu kopieren",
+    authRequiredDescription:
+      "Fahre mit Google fort, um den SwiftUI-Code zu kopieren und zu dieser Komponente zurückzukehren.",
   },
   notFound: {
     eyebrow: "Nicht gefunden",
