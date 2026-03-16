@@ -1,11 +1,10 @@
-import Link from "next/link";
 import type { Metadata } from "next";
+import { House } from "lucide-react";
 
 import { withLocalePath } from "@/i18n/routing";
 import { getI18n } from "@/i18n/server";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { AppActionLink } from "@/components/ui/app-action-link";
 import { createPageMetadata } from "@/lib/seo";
-import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale, messages } = await getI18n();
@@ -34,12 +33,14 @@ export default async function NotFound() {
         <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
           {messages.notFound.description}
         </p>
-        <Link
+        <AppActionLink
           href={withLocalePath(locale, "/")}
-          className={cn(buttonVariants({ size: "lg" }), "mt-8 rounded-full px-6")}
+          uiSize="lg"
+          icon={<House className="size-4" />}
+          className="mt-8 px-6"
         >
           {messages.notFound.action}
-        </Link>
+        </AppActionLink>
       </section>
     </main>
   );

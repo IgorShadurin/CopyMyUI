@@ -16,6 +16,13 @@ function initials(name: string | null | undefined) {
     .toUpperCase();
 }
 
+function isVideoMedia(screenshot: {
+  mediaType?: "IMAGE" | "VIDEO" | null;
+  mimeType?: string | null;
+}) {
+  return screenshot.mediaType === "VIDEO" || Boolean(screenshot.mimeType?.startsWith("video/"));
+}
+
 export async function ComponentCard({
   component,
   showFavorite = true,
@@ -24,6 +31,20 @@ export async function ComponentCard({
   showFavorite?: boolean;
 }) {
   const { locale, messages } = await getI18n();
+  const previewSource = component.screenshots.find((screenshot) => !isVideoMedia(screenshot));
+  const previewWidth = previewSource?.width ?? 0;
+  const previewHeight = previewSource?.height ?? 0;
+  const previewAspectRatio = previewWidth > 0 && previewHeight > 0 ? previewWidth / previewHeight : null;
+  const isLandscapePreview = previewWidth > previewHeight;
+  const isPortraitPreview = previewHeight > previewWidth;
+  const forcePortraitCrop = component.slug === "audio-trimmer";
+  const shouldApplyPortraitCrop = isPortraitPreview || forcePortraitCrop;
+  const portraitScaleX =
+    shouldApplyPortraitCrop && previewAspectRatio
+      ? Math.min(1.42, Math.max(1.24, 0.72 / previewAspectRatio))
+      : shouldApplyPortraitCrop
+        ? 1.42
+        : 1;
 
   return (
     <div
@@ -34,7 +55,7 @@ export async function ComponentCard({
         <Link
           href={withLocalePath(locale, `/components/${component.slug}`)}
           aria-label={component.title}
-          className="relative block aspect-[4/3] w-full overflow-hidden rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="relative block aspect-[3/4] w-full overflow-hidden rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           style={{
             boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.07)",
           }}
@@ -43,10 +64,15 @@ export async function ComponentCard({
             <Image
               src={component.previewImage}
               alt={component.title}
-              width={1200}
-              height={900}
+              width={1080}
+              height={1920}
               unoptimized
               className="size-full object-cover"
+              style={{
+                objectPosition: isLandscapePreview ? "left top" : "center",
+                transform: shouldApplyPortraitCrop ? `scaleX(${portraitScaleX})` : "none",
+                transformOrigin: "center center",
+              }}
             />
           ) : (
             <div className="flex size-full items-center justify-center border border-dashed border-black/10 bg-white/70 text-sm text-muted-foreground">

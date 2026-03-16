@@ -110,6 +110,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close render={<Button variant="outline" />}>
+          <XIcon />
           Close
         </DialogPrimitive.Close>
       )}

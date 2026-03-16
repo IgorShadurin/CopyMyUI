@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { ComponentCard } from "@/components/component-card";
+import { ComponentCardList } from "@/components/component-card-list";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getI18n } from "@/i18n/server";
 import { createPageMetadata } from "@/lib/seo";
@@ -130,11 +130,10 @@ export default async function CreatorProfilePage({
               {messages.profilePage.freeSectionTitle}
             </h2>
           </div>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {freeComponents.map((component) => (
-              <ComponentCard key={component.id} component={component} />
-            ))}
-          </div>
+          <ComponentCardList
+            components={freeComponents}
+            className="gap-6 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3"
+          />
         </section>
       ) : null}
 
@@ -148,11 +147,10 @@ export default async function CreatorProfilePage({
               {messages.profilePage.premiumSectionTitle}
             </h2>
           </div>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {premiumComponents.map((component) => (
-              <ComponentCard key={component.id} component={component} />
-            ))}
-          </div>
+          <ComponentCardList
+            components={premiumComponents}
+            className="gap-6 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3"
+          />
         </section>
       ) : null}
     </main>

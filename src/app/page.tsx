@@ -1,4 +1,3 @@
-import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -68,7 +67,7 @@ export default async function Home() {
                   {messages.home.description}
                 </p>
 
-                <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:max-w-2xl">
+                <div className="mt-6 sm:max-w-xl">
                   <AppActionLink
                     href={withLocalePath(locale, "/components")}
                     uiSize="lg"
@@ -77,15 +76,6 @@ export default async function Home() {
                     className="w-full justify-center"
                   >
                     {messages.home.exploreComponents}
-                  </AppActionLink>
-                  <AppActionLink
-                    href={withLocalePath(locale, "/components?access=premium")}
-                    tone="outline"
-                    uiSize="lg"
-                    icon={<Crown className="size-4" />}
-                    className="w-full justify-center"
-                  >
-                    {messages.home.browsePremium}
                   </AppActionLink>
                 </div>
             </div>
@@ -175,32 +165,19 @@ export default async function Home() {
                 }
 
                 return (
-                  <Link
+                  <div
                     key={highlight.id}
-                    href={withLocalePath(locale, `/categories/${highlight.slug}`)}
-                    className="group rounded-[1.6rem] border border-black/6 bg-[rgba(252,251,247,0.96)] p-4 transition-colors hover:bg-white"
+                    className="space-y-2 rounded-[1.4rem] border border-black/6 bg-[rgba(252,251,247,0.82)] p-3"
                   >
-                    <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                    <Link
+                      href={withLocalePath(locale, `/categories/${highlight.slug}`)}
+                      className="inline-flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-foreground"
+                    >
                       <CategoryIcon slug={highlight.slug} className="size-4" />
                       {translateCategory(highlight, messages, locale).name}
-                    </p>
-                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
-                      {highlight.component.title}
-                    </h3>
-                    <p className="mt-2 line-clamp-3 text-sm leading-7 text-muted-foreground">
-                      {translateCategory(highlight, messages, locale).description}
-                    </p>
-                    <div className="mt-4 overflow-hidden rounded-[1.3rem] border border-black/6 bg-white">
-                      <Image
-                        src={highlight.component.previewImage ?? "/seed-screenshots/aurora-tab-orbit.svg"}
-                        alt={highlight.component.title}
-                        width={1600}
-                        height={1000}
-                        unoptimized
-                        className="aspect-[16/10] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                      />
-                    </div>
-                  </Link>
+                    </Link>
+                    <ComponentCard component={highlight.component} />
+                  </div>
                 );
               })}
             </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { Copy, Linkedin, MessagesSquare, Share2 } from "lucide-react";
+import { Copy, ExternalLink, Linkedin, MessagesSquare, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/i18n/client";
@@ -36,6 +36,7 @@ export function ShareLinks({
         rel="noreferrer"
         className={cn(buttonVariants({ variant: "outline", size: "sm" }), "rounded-full")}
       >
+        <ExternalLink className="size-4" />
         {messages.share.shareOnX}
       </a>
       <a

@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { useI18n } from "@/i18n/client";
+import { SourceThemeToggle } from "@/components/source-theme-toggle";
 import { Button } from "@/components/ui/button";
+import {
+  getInitialSourceTheme,
+  storeSourceTheme,
+  type SourceTheme,
+} from "@/lib/source-theme";
 import { cn } from "@/lib/utils";
 
 const maxCollapsedLines = 42;
@@ -22,9 +28,14 @@ export function CodePreview({
   const rootRef = useRef<HTMLDivElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const [sourceTheme, setSourceTheme] = useState<SourceTheme>(getInitialSourceTheme);
   const lineCount = code.split(/\r?\n/).length;
   const [canExpand, setCanExpand] = useState(lineCount > maxCollapsedLines);
   const [desktopCollapsedHeight, setDesktopCollapsedHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    storeSourceTheme(sourceTheme);
+  }, [sourceTheme]);
 
   useEffect(() => {
     let frame = 0;
@@ -114,7 +125,19 @@ export function CodePreview({
 
   return (
     <div ref={rootRef} className={cn("flex min-h-0 flex-col pb-4 sm:pb-5", className)}>
-      <div className="flex min-h-0 flex-1 overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/5">
+      <div className="mb-3 flex justify-end">
+        <SourceThemeToggle
+          value={sourceTheme}
+          onChange={setSourceTheme}
+          surface={sourceTheme}
+        />
+      </div>
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 overflow-hidden rounded-[1.6rem] border",
+          sourceTheme === "dark" ? "border-white/10 bg-white/5" : "border-black/10 bg-[#f7f7f8]"
+        )}
+      >
         <pre
           ref={preRef}
           style={
@@ -123,7 +146,8 @@ export function CodePreview({
               : undefined
           }
           className={cn(
-            "code-scrollbar h-full min-h-0 overflow-auto p-4 text-[12px] leading-6 text-white/85 sm:p-5 sm:text-[13px]",
+            "code-scrollbar h-full min-h-0 overflow-auto p-4 text-[12px] leading-6 sm:p-5 sm:text-[13px]",
+            sourceTheme === "dark" ? "text-white/85" : "text-foreground",
             canExpand && !expanded
               ? "max-h-[66vh] lg:max-h-[74vh]"
               : ""
@@ -139,7 +163,12 @@ export function CodePreview({
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full border-white/20 bg-white/10 text-white hover:bg-white/15"
+            className={cn(
+              "rounded-full",
+              sourceTheme === "dark"
+                ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                : "border-black/12 bg-white text-foreground hover:bg-muted"
+            )}
             onClick={() => setExpanded((current) => !current)}
           >
             {expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}

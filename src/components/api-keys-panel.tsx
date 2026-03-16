@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 
-import { AlertCircle, KeyRound, Trash2 } from "lucide-react";
+import { AlertCircle, KeyRound, Plus, Save, Trash2 } from "lucide-react";
 
 import { useI18n } from "@/i18n/client";
 import {
@@ -10,6 +10,7 @@ import {
   deleteApiKeyAction,
   updateApiKeyAction,
 } from "@/lib/actions/api-key-actions";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { Alert } from "@/components/ui/alert";
 
 type ApiKeyItem = {
@@ -122,166 +123,163 @@ export function ApiKeysPanel({
   }
 
   return (
-    <section className="space-y-6">
-      <div className="rounded-[2rem] border border-black/6 bg-white/88 p-5 shadow-[0_28px_70px_-44px_rgba(22,18,12,0.45)]">
-        <div className="flex items-start gap-4">
-          <div className="rounded-full bg-amber-50 p-3 text-amber-700">
-            <KeyRound className="size-5" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              {messages.apiKeys.title}
-            </h2>
-            <p className="max-w-3xl text-sm leading-7 text-muted-foreground">
-              {messages.apiKeys.description}
-            </p>
-          </div>
+    <section className="rounded-[1.6rem] border border-black/6 bg-white/92 p-4 shadow-[0_18px_50px_-42px_rgba(22,18,12,0.38)] sm:p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1.5">
+          <h2 className="inline-flex items-center gap-2.5 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+            <KeyRound className="size-6 text-muted-foreground sm:size-7" />
+            {messages.apiKeys.title}
+          </h2>
+          <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:pr-4">
+            {messages.apiKeys.description}
+          </p>
         </div>
-
-        <form
-          action={handleCreate}
-          data-testid="api-key-create-form"
-          className="mt-6 grid gap-4 lg:grid-cols-[1fr_auto_auto]"
-        >
-          <div>
-            <label
-              htmlFor="api-key-name"
-              className="block text-sm font-medium text-foreground"
-            >
-              {messages.apiKeys.nameLabel}
-            </label>
-            <input
-              id="api-key-name"
-              type="text"
-              name="name"
-              placeholder={messages.apiKeys.namePlaceholder}
-              className="mt-2 h-11 w-full rounded-[1rem] border border-black/10 bg-white px-4 text-sm outline-none"
-            />
-          </div>
-          <label className="flex items-center gap-3 rounded-[1rem] border border-black/10 bg-[rgba(252,251,247,0.96)] px-4 py-3 text-sm text-foreground">
-            <input type="checkbox" name="canPurchase" />
-            <span>{messages.apiKeys.purchaseScopeLabel}</span>
-          </label>
-          <button
-            type="submit"
-            className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-5 text-sm font-semibold text-background"
-          >
-            {messages.apiKeys.create}
-          </button>
-        </form>
-
-        {error ? (
-          <Alert className="mt-4 rounded-[1.4rem] border-rose-200 bg-rose-50 text-rose-700">
-            <AlertCircle className="size-4" />
-            <div>{error}</div>
-          </Alert>
-        ) : null}
-        {notice ? (
-          <Alert className="mt-4 rounded-[1.4rem] border-emerald-200 bg-emerald-50 text-emerald-700">
-            <AlertCircle className="size-4" />
-            <div>{notice}</div>
-          </Alert>
-        ) : null}
-
-        {createdKey ? (
-          <div className="mt-4 rounded-[1.4rem] border border-emerald-200 bg-emerald-50/80 p-4">
-            <p className="text-sm font-semibold text-emerald-800">
-              {messages.apiKeys.createdNotice.replace(
-                "{name}",
-                createdKeyName ?? messages.apiKeys.fallbackName
-              )}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-emerald-900/80">
-              {messages.apiKeys.createdHint}
-            </p>
-            <code
-              data-testid="created-api-key"
-              className="mt-3 block overflow-x-auto rounded-[1rem] border border-emerald-200 bg-white px-4 py-3 text-sm text-foreground"
-            >
-              {createdKey}
-            </code>
-          </div>
-        ) : null}
+        <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1 text-xs font-semibold text-muted-foreground">
+          {orderedApiKeys.length}
+        </span>
       </div>
 
-      <div className="grid gap-4">
-        {orderedApiKeys.map((apiKey) => (
-          <form
-            key={apiKey.id}
-            action={handleUpdate}
-            data-testid={`api-key-card-${apiKey.id}`}
-            className="grid gap-4 rounded-[1.8rem] border border-black/6 bg-white/88 p-5 shadow-[0_28px_70px_-44px_rgba(22,18,12,0.45)]"
+      <form
+        action={handleCreate}
+        data-testid="api-key-create-form"
+        className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end"
+      >
+        <div>
+          <label
+            htmlFor="api-key-name"
+            className="block text-sm font-medium text-foreground"
           >
-            <input type="hidden" name="apiKeyId" value={apiKey.id} />
-            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto]">
-              <div>
-                <label
-                  htmlFor={`api-key-name-${apiKey.id}`}
-                  className="block text-sm font-medium text-foreground"
-                >
-                  {messages.apiKeys.nameLabel}
-                </label>
-                <input
-                  id={`api-key-name-${apiKey.id}`}
-                  type="text"
-                  name="name"
-                  defaultValue={apiKey.name}
-                  className="mt-2 h-11 w-full rounded-[1rem] border border-black/10 bg-white px-4 text-sm outline-none"
-                />
+            {messages.apiKeys.nameLabel}
+          </label>
+          <input
+            id="api-key-name"
+            type="text"
+            name="name"
+            placeholder={messages.apiKeys.namePlaceholder}
+            className="mt-1.5 h-10 w-full rounded-[0.9rem] border border-black/10 bg-white px-3.5 text-sm outline-none"
+          />
+        </div>
+        <div className="lg:pb-0.5">
+          <AppActionButton
+            type="submit"
+            uiSize="lg"
+            icon={<Plus className="size-4" />}
+          >
+            {messages.apiKeys.create}
+          </AppActionButton>
+        </div>
+      </form>
+
+      {error ? (
+        <Alert className="mt-4 rounded-[1.2rem] border-rose-200 bg-rose-50 text-rose-700">
+          <AlertCircle className="size-4" />
+          <div>{error}</div>
+        </Alert>
+      ) : null}
+      {notice ? (
+        <Alert className="mt-4 rounded-[1.2rem] border-emerald-200 bg-emerald-50 text-emerald-700">
+          <AlertCircle className="size-4" />
+          <div>{notice}</div>
+        </Alert>
+      ) : null}
+
+      {createdKey ? (
+        <div className="mt-4 rounded-[1.2rem] border border-emerald-200 bg-emerald-50/80 p-4">
+          <p className="text-sm font-semibold text-emerald-800">
+            {messages.apiKeys.createdNotice.replace(
+              "{name}",
+              createdKeyName ?? messages.apiKeys.fallbackName
+            )}
+          </p>
+          <p className="mt-2 text-sm leading-7 text-emerald-900/80">
+            {messages.apiKeys.createdHint}
+          </p>
+          <code
+            data-testid="created-api-key"
+            className="mt-3 block overflow-x-auto rounded-[1rem] border border-emerald-200 bg-white px-4 py-3 text-sm text-foreground"
+          >
+            {createdKey}
+          </code>
+        </div>
+      ) : null}
+
+      <div className="mt-5 border-t border-black/6 pt-4">
+        <div className="grid gap-2.5">
+          {orderedApiKeys.map((apiKey) => (
+            <form
+              key={apiKey.id}
+              action={handleUpdate}
+              data-testid={`api-key-card-${apiKey.id}`}
+              className="grid gap-3 rounded-[1.2rem] border border-black/8 bg-[rgba(252,251,247,0.96)] p-3.5"
+            >
+              <input type="hidden" name="apiKeyId" value={apiKey.id} />
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
+                <div>
+                  <label
+                    htmlFor={`api-key-name-${apiKey.id}`}
+                    className="block text-sm font-medium text-foreground"
+                  >
+                    {messages.apiKeys.nameLabel}
+                  </label>
+                  <input
+                    id={`api-key-name-${apiKey.id}`}
+                    type="text"
+                    name="name"
+                    defaultValue={apiKey.name}
+                    className="mt-1.5 h-10 w-full rounded-[0.9rem] border border-black/10 bg-white px-3.5 text-sm outline-none"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <div className="w-full rounded-[0.9rem] border border-black/10 bg-white px-3 py-2 text-xs sm:min-w-64">
+                    <p className="font-medium text-foreground">{apiKey.keyPrefix}...</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {apiKey.lastUsedAt
+                        ? `${messages.apiKeys.lastUsedLabel} ${formatDate(apiKey.lastUsedAt)}`
+                        : messages.apiKeys.neverUsed}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <label className="flex items-center gap-3 rounded-[1rem] border border-black/10 bg-[rgba(252,251,247,0.96)] px-4 py-3 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  name="canPurchase"
-                  defaultChecked={apiKey.canPurchase}
-                />
-                <span>{messages.apiKeys.purchaseScopeLabel}</span>
-              </label>
-              <div className="rounded-[1rem] border border-black/10 bg-[rgba(252,251,247,0.96)] px-4 py-3 text-sm">
-                <p className="font-medium text-foreground">{apiKey.keyPrefix}...</p>
-                <p className="mt-1 text-muted-foreground">
-                  {apiKey.lastUsedAt
-                    ? `${messages.apiKeys.lastUsedLabel} ${formatDate(apiKey.lastUsedAt)}`
-                    : messages.apiKeys.neverUsed}
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-black/8 pt-3">
+                <p className="text-xs text-muted-foreground">
+                  {messages.apiKeys.createdLabel} {formatDate(apiKey.createdAt)}
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <AppActionButton
+                    type="submit"
+                    disabled={pending}
+                    uiSize="md"
+                    tone="outline"
+                    icon={<Save className="size-4" />}
+                  >
+                    {messages.apiKeys.save}
+                  </AppActionButton>
+                  <AppActionButton
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      const formData = new FormData();
+                      formData.set("apiKeyId", apiKey.id);
+                      void handleDelete(formData);
+                    }}
+                    uiSize="md"
+                    tone="destructive"
+                    icon={<Trash2 className="size-4" />}
+                  >
+                    {messages.apiKeys.delete}
+                  </AppActionButton>
+                </div>
               </div>
-            </div>
+            </form>
+          ))}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground">
-                {messages.apiKeys.createdLabel} {formatDate(apiKey.createdAt)}
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  disabled={pending}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-medium text-foreground"
-                >
-                  {messages.apiKeys.save}
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => {
-                    const formData = new FormData();
-                    formData.set("apiKeyId", apiKey.id);
-                    void handleDelete(formData);
-                  }}
-                  className="inline-flex h-10 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700"
-                >
-                  <Trash2 className="size-4" />
-                  {messages.apiKeys.delete}
-                </button>
-              </div>
+          {orderedApiKeys.length === 0 ? (
+            <div className="rounded-[1.2rem] border border-dashed border-black/12 bg-[rgba(252,251,247,0.7)] px-4 py-4 text-sm text-muted-foreground">
+              {messages.apiKeys.empty}
             </div>
-          </form>
-        ))}
-
-        {orderedApiKeys.length === 0 ? (
-          <div className="rounded-[1.8rem] border border-dashed border-black/10 bg-white/70 px-5 py-8 text-sm text-muted-foreground">
-            {messages.apiKeys.empty}
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </section>
   );

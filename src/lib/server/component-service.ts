@@ -220,6 +220,31 @@ function getPreviewImageUrl(
   return firstImage?.previewUrl ?? firstImage?.url ?? null;
 }
 
+const LOCKED_SOURCE_PREVIEW_PERCENT = 0.08;
+const LOCKED_SOURCE_PREVIEW_MIN_LINES = 8;
+const LOCKED_SOURCE_PREVIEW_MAX_LINES = 80;
+
+function getLockedSourcePreview(swiftCode: string) {
+  const normalized = swiftCode.replace(/\r\n/g, "\n").trimEnd();
+  const lines = normalized.split("\n");
+
+  if (!lines.length) {
+    return "";
+  }
+
+  const percentLines = Math.ceil(lines.length * LOCKED_SOURCE_PREVIEW_PERCENT);
+  const previewLineCount = Math.min(
+    LOCKED_SOURCE_PREVIEW_MAX_LINES,
+    Math.max(LOCKED_SOURCE_PREVIEW_MIN_LINES, percentLines)
+  );
+
+  if (lines.length <= previewLineCount) {
+    return normalized;
+  }
+
+  return lines.slice(0, previewLineCount).join("\n").trimEnd();
+}
+
 async function assertCategorySelectionExists(
   tx: Prisma.TransactionClient,
   primaryCategoryId: string,
@@ -498,7 +523,7 @@ export async function getHomepageData(viewerId?: string | null) {
         approvedRevisionId: { not: null },
       },
       orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
-      take: 6,
+      take: 8,
       include: listInclude,
     }),
     prisma.component.findMany({
@@ -711,6 +736,7 @@ export async function getPublicComponentBySlug(slug: string, viewer: Viewer | nu
     summary: visibleRevision.summary,
     description: visibleRevision.description,
     swiftCode: hasUnlockedPremium ? visibleRevision.swiftCode : null,
+    swiftCodePreview: hasUnlockedPremium ? null : getLockedSourcePreview(visibleRevision.swiftCode),
     changelog: visibleRevision.changelog,
     screenshots: visibleRevision.screenshots,
     publishedAt: component.publishedAt,
@@ -1011,6 +1037,8 @@ export async function startRevisionDraft(componentId: string, ownerId: string) {
             storagePath: screenshot.storagePath,
             previewUrl: screenshot.previewUrl,
             previewStoragePath: screenshot.previewStoragePath,
+            width: screenshot.width,
+            height: screenshot.height,
             altText: screenshot.altText,
             sortOrder: index,
           })),

@@ -1,5 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
 import path from "node:path";
+import { promisify } from "node:util";
 
 import { NextResponse } from "next/server";
 import sharp from "sharp";
@@ -7,12 +9,43 @@ import sharp from "sharp";
 import { formatMessage } from "@/i18n/format";
 import { getI18n } from "@/i18n/server";
 import { MAX_SCREENSHOTS } from "@/lib/constants";
+import { withStandardAltText } from "@/lib/screenshot-alt-text";
 import { requireViewer } from "@/lib/viewer";
 
 const imageMimeTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const videoMimeTypes = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 const maxImageSizeBytes = 5 * 1024 * 1024;
 const maxVideoSizeBytes = 50 * 1024 * 1024;
+const execFileAsync = promisify(execFile);
+
+async function probeVideoDimensions(filePath: string) {
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=width,height",
+        "-of",
+        "json",
+        filePath,
+      ],
+      { timeout: 5000 }
+    );
+    const parsed = JSON.parse(stdout) as {
+      streams?: Array<{ width?: number; height?: number }>;
+    };
+    const stream = parsed.streams?.[0];
+    const width = Number.isFinite(stream?.width) ? Number(stream?.width) : null;
+    const height = Number.isFinite(stream?.height) ? Number(stream?.height) : null;
+    return { width, height };
+  } catch {
+    return { width: null, height: null };
+  }
+}
 
 function getUploadPathSegments() {
   const namespace = process.env.COPYMYUI_UPLOAD_NAMESPACE?.trim();
@@ -96,8 +129,6 @@ export async function POST(request: Request) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
     const baseName = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 10)}`;
-    const altText = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
-
     if (mediaType === "IMAGE") {
       const image = sharp(bytes).rotate();
       const fullRelativePath = path.join(...uploadPathSegments, `${baseName}-full.jpg`);
@@ -117,7 +148,7 @@ export async function POST(request: Request) {
             chromaSubsampling: "4:4:4",
             mozjpeg: true,
           })
-          .toBuffer(),
+          .toBuffer({ resolveWithObject: true }),
         image
           .clone()
           .resize({
@@ -128,12 +159,12 @@ export async function POST(request: Request) {
             quality: 72,
             mozjpeg: true,
           })
-          .toBuffer(),
+          .toBuffer({ resolveWithObject: true }),
       ]);
 
       await Promise.all([
-        writeFile(fullAbsolutePath, fullJpeg),
-        writeFile(previewAbsolutePath, previewJpeg),
+        writeFile(fullAbsolutePath, fullJpeg.data),
+        writeFile(previewAbsolutePath, previewJpeg.data),
       ]);
 
       uploadedFiles.push({
@@ -143,7 +174,9 @@ export async function POST(request: Request) {
         storagePath: fullRelativePath.replaceAll(path.sep, "/"),
         previewUrl: `/${previewRelativePath.replaceAll(path.sep, "/")}`,
         previewStoragePath: previewRelativePath.replaceAll(path.sep, "/"),
-        altText,
+        width: fullJpeg.info.width ?? null,
+        height: fullJpeg.info.height ?? null,
+        altText: "",
       });
       continue;
     }
@@ -153,6 +186,7 @@ export async function POST(request: Request) {
     const absolutePath = path.join(process.cwd(), "public", relativePath);
 
     await writeFile(absolutePath, bytes);
+    const { width, height } = await probeVideoDimensions(absolutePath);
 
     uploadedFiles.push({
       mediaType: "VIDEO" as const,
@@ -161,9 +195,11 @@ export async function POST(request: Request) {
       storagePath: relativePath.replaceAll(path.sep, "/"),
       previewUrl: null,
       previewStoragePath: null,
-      altText,
+      width,
+      height,
+      altText: "",
     });
   }
 
-  return NextResponse.json({ files: uploadedFiles });
+  return NextResponse.json({ files: withStandardAltText(uploadedFiles) });
 }

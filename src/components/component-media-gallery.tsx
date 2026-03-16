@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
+import { ImageIcon, Video } from "lucide-react";
+
+import { ComponentMediaPreview, isVideoMediaItem } from "@/components/component-media-preview";
+import { cn } from "@/lib/utils";
 
 type MediaItem = {
   url: string;
@@ -9,10 +12,12 @@ type MediaItem = {
   previewUrl?: string | null;
   mediaType?: "IMAGE" | "VIDEO" | null;
   mimeType?: string | null;
+  width?: number | null;
+  height?: number | null;
 };
 
 function isVideoMedia(item: MediaItem) {
-  return item.mediaType === "VIDEO" || Boolean(item.mimeType?.startsWith("video/"));
+  return isVideoMediaItem(item);
 }
 
 function preferredInitialIndex(items: MediaItem[]) {
@@ -21,49 +26,26 @@ function preferredInitialIndex(items: MediaItem[]) {
 }
 
 export function ComponentMediaGallery({ items }: { items: MediaItem[] }) {
-  const [activeIndex, setActiveIndex] = useState(() => preferredInitialIndex(items));
+  const initialIndex = preferredInitialIndex(items);
+  const [activeIndex, setActiveIndex] = useState(() => initialIndex);
 
-  useEffect(() => {
-    setActiveIndex(preferredInitialIndex(items));
-  }, [items]);
+  const hasItems = items.length > 0;
+  const clampedActiveIndex = hasItems ? Math.min(activeIndex, items.length - 1) : 0;
+  const activeItem = hasItems ? (items[clampedActiveIndex] ?? items[0]) : null;
 
-  if (items.length === 0) {
+  if (!activeItem) {
     return null;
   }
 
-  const activeItem = items[activeIndex] ?? items[0];
-  const activeIsVideo = isVideoMedia(activeItem);
-
   return (
     <div className="relative">
-      {activeIsVideo ? (
-        <video
-          key={activeItem.url}
-          src={activeItem.url}
-          poster={activeItem.previewUrl ?? undefined}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          className="w-full rounded-[1.2rem] object-cover sm:rounded-[1.4rem]"
-        />
-      ) : (
-        <Image
-          src={activeItem.url}
-          alt={activeItem.altText}
-          width={1800}
-          height={1200}
-          unoptimized
-          className="w-full rounded-[1.2rem] object-cover sm:rounded-[1.4rem]"
-        />
-      )}
+      <ComponentMediaPreview item={activeItem} className="max-w-[20rem] sm:max-w-[22rem]" />
 
       {items.length > 1 ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <div className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/90 px-2 py-1 backdrop-blur">
+          <div className="pointer-events-auto inline-flex items-center gap-4 rounded-full border border-black/10 bg-white/90 px-4 py-2 backdrop-blur">
             {items.map((item, index) => {
-              const active = index === activeIndex;
+              const active = index === clampedActiveIndex;
               return (
                 <button
                   key={`${item.url}-${index}`}
@@ -71,15 +53,23 @@ export function ComponentMediaGallery({ items }: { items: MediaItem[] }) {
                   aria-label={item.altText}
                   aria-current={active}
                   onClick={() => setActiveIndex(index)}
-                  className="rounded-full p-1 transition hover:scale-110"
+                  className="rounded-full p-2 transition hover:scale-110"
                 >
-                  <span
-                    className={
-                      active
-                        ? "block size-2.5 rounded-full bg-foreground"
-                        : "block size-2 rounded-full bg-foreground/35"
-                    }
-                  />
+                  {isVideoMedia(item) ? (
+                    <Video
+                      className={cn(
+                        "size-6",
+                        active ? "text-foreground" : "text-foreground/45"
+                      )}
+                    />
+                  ) : (
+                    <ImageIcon
+                      className={cn(
+                        "size-6",
+                        active ? "text-foreground" : "text-foreground/45"
+                      )}
+                    />
+                  )}
                 </button>
               );
             })}
@@ -89,4 +79,3 @@ export function ComponentMediaGallery({ items }: { items: MediaItem[] }) {
     </div>
   );
 }
-

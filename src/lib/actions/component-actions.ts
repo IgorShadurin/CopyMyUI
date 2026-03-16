@@ -24,7 +24,20 @@ import { requireModerator, requireViewer } from "@/lib/viewer";
 import { parseCategoryIds, parseScreenshots } from "@/lib/validation/component";
 import type { FormState } from "@/lib/actions/form-state";
 
-function draftInputFromFormData(formData: FormData) {
+function draftInputFromFormData(
+  formData: FormData,
+  options?: { forceFreeAccess?: boolean }
+) {
+  const forceFreeAccess = options?.forceFreeAccess ?? false;
+  const submittedAccessType =
+    formData.get("accessType") === ComponentAccessType.PREMIUM
+      ? ComponentAccessType.PREMIUM
+      : ComponentAccessType.FREE;
+  const accessType = forceFreeAccess
+    ? ComponentAccessType.FREE
+    : submittedAccessType;
+  const changelog = String(formData.get("changelog") ?? "").trim();
+
   return {
     title: String(formData.get("title") ?? ""),
     primaryCategoryId: String(formData.get("primaryCategoryId") ?? ""),
@@ -35,13 +48,10 @@ function draftInputFromFormData(formData: FormData) {
     ),
     summary: String(formData.get("summary") ?? ""),
     description: String(formData.get("description") ?? ""),
-    changelog: String(formData.get("changelog") ?? ""),
-    accessType:
-      formData.get("accessType") === ComponentAccessType.PREMIUM
-        ? ComponentAccessType.PREMIUM
-        : ComponentAccessType.FREE,
+    changelog: changelog.length > 0 ? changelog : undefined,
+    accessType,
     sellerTargetPriceCents:
-      formData.get("accessType") === ComponentAccessType.PREMIUM
+      accessType === ComponentAccessType.PREMIUM
         ? parseUsdToCents(String(formData.get("sellerTargetPriceUsd") ?? ""))
         : null,
     swiftCode: String(formData.get("swiftCode") ?? ""),
@@ -91,7 +101,10 @@ export async function createComponentFormAction(
   const intent = String(formData.get("intent") ?? "draft");
 
   try {
-    const created = await createComponentDraft(viewer.id, draftInputFromFormData(formData));
+    const created = await createComponentDraft(
+      viewer.id,
+      draftInputFromFormData(formData, { forceFreeAccess: true })
+    );
 
     if (intent === "submit") {
       await submitActiveRevision(created.componentId, viewer.id);

@@ -220,6 +220,8 @@ model RevisionScreenshot {
   storagePath        String
   previewUrl         String?
   previewStoragePath String?
+  width              Int?
+  height             Int?
   altText            String
   sortOrder          Int               @default(0)
   createdAt          DateTime          @default(now())

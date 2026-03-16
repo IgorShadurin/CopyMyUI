@@ -2,10 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Check, X } from "lucide-react";
 
 import { useI18n } from "@/i18n/client";
 import { Alert } from "@/components/ui/alert";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { Textarea } from "@/components/ui/textarea";
 
 export function ModerationDecisionForm({
@@ -164,22 +165,25 @@ export function ModerationDecisionForm({
         className="min-h-36 rounded-[1.4rem]"
       />
       <div className="flex flex-wrap gap-3">
-        <button
+        <AppActionButton
           type="submit"
           value="approved"
           formAction={approveAction}
-          className="inline-flex h-9 items-center justify-center rounded-full bg-foreground px-4 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          uiSize="sm"
+          icon={<Check className="size-4" />}
         >
           {messages.moderationForm.approve}
-        </button>
-        <button
+        </AppActionButton>
+        <AppActionButton
           type="submit"
           value="declined"
           formAction={declineAction}
-          className="inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 transition-opacity hover:opacity-90"
+          uiSize="sm"
+          tone="destructive"
+          icon={<X className="size-4" />}
         >
           {messages.moderationForm.decline}
-        </button>
+        </AppActionButton>
       </div>
     </form>
   );

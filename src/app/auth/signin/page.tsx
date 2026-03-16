@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { withLocalePath } from "@/i18n/routing";
 import { getI18n } from "@/i18n/server";
+import { GoogleIcon } from "@/components/icons/google-icon";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { googleSignInAction } from "@/lib/actions/auth-actions";
 import { isGoogleAuthConfigured } from "@/lib/env";
 import { createPageMetadata } from "@/lib/seo";
@@ -58,12 +60,9 @@ export default async function SignInPage() {
           </p>
 
           <form action={googleSignInAction} className="mt-6">
-            <button
-              type="submit"
-              className="h-12 w-full rounded-full bg-foreground px-5 text-sm font-semibold text-background"
-            >
+            <AppActionButton type="submit" uiSize="lg" icon={<GoogleIcon />} className="h-12 w-full">
               {messages.signInPage.continueWithGoogle}
-            </button>
+            </AppActionButton>
           </form>
         </div>
       </section>

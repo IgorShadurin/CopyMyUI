@@ -7,9 +7,9 @@ type AppActionButtonSize = "sm" | "md" | "lg";
 
 type AppActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   uiSize?: AppActionButtonSize;
-  icon?: ReactNode;
+  icon: ReactNode;
   iconPosition?: "left" | "right";
-  tone?: "default" | "outline" | "secondary" | "ghost";
+  tone?: "default" | "outline" | "secondary" | "ghost" | "destructive";
 };
 
 const sizeClassMap: Record<AppActionButtonSize, string> = {

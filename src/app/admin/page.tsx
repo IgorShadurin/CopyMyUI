@@ -1,8 +1,10 @@
 import Image from "next/image";
 import type { Metadata } from "next";
+import { Save } from "lucide-react";
 
 import { PageNotice } from "@/components/page-notice";
-import { ComponentCard } from "@/components/component-card";
+import { ComponentCardList } from "@/components/component-card-list";
+import { AppActionButton } from "@/components/ui/app-action-button";
 import { getI18n, translateCategory } from "@/i18n/server";
 import {
   updateCategoryAction,
@@ -101,12 +103,14 @@ export default async function AdminPage({
           <p className="text-xs leading-5 text-muted-foreground">
             {messages.adminPage.markupHint}
           </p>
-          <button
+          <AppActionButton
             type="submit"
-            className="inline-flex h-9 items-center justify-center rounded-md bg-foreground px-3 text-sm font-medium text-background"
+            uiSize="sm"
+            icon={<Save className="size-4" />}
+            className="rounded-md"
           >
             {messages.adminPage.saveMarkup}
-          </button>
+          </AppActionButton>
         </form>
       </section>
 
@@ -196,12 +200,14 @@ export default async function AdminPage({
                       {messages.adminPage.categoryUsageLabel} {category._count.componentLinks}
                     </p>
                   </div>
-                  <button
+                  <AppActionButton
                     type="submit"
-                    className="inline-flex h-9 items-center justify-center rounded-md bg-foreground px-3 text-sm font-medium text-background"
+                    uiSize="sm"
+                    icon={<Save className="size-4" />}
+                    className="rounded-md"
                   >
                     {messages.adminPage.saveCategory}
-                  </button>
+                  </AppActionButton>
                 </div>
               </form>
             );
@@ -216,11 +222,10 @@ export default async function AdminPage({
             {messages.adminPage.premiumSectionTitle}
           </h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {adminData.premiumComponents.map((component) => (
-            <ComponentCard key={component.id} component={component} />
-          ))}
-        </div>
+        <ComponentCardList
+          components={adminData.premiumComponents}
+          className="gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-3"
+        />
       </section>
 
       <section className="rounded-xl border border-black/8 bg-white p-4">

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ComponentAccessType } from "@prisma/client";
 
 import { MAX_SCREENSHOTS, MIN_SCREENSHOTS } from "@/lib/constants";
+import { withStandardAltText } from "@/lib/screenshot-alt-text";
 
 const swiftPatterns = [
   /import\s+SwiftUI/,
@@ -17,6 +18,8 @@ export const screenshotPayloadSchema = z.object({
   storagePath: z.string().trim().min(1),
   previewUrl: z.string().trim().min(1).optional().nullable(),
   previewStoragePath: z.string().trim().min(1).optional().nullable(),
+  width: z.number().int().positive().max(10000).optional().nullable(),
+  height: z.number().int().positive().max(10000).optional().nullable(),
   altText: z.string().trim().min(2).max(100),
 });
 
@@ -49,7 +52,7 @@ export const componentDraftSchema = z.object({
   categoryIds: z.array(z.string().trim().min(1)).min(1).max(3),
   summary: z.string().trim().min(20).max(160),
   description: z.string().trim().min(40).max(1400),
-  changelog: z.string().trim().max(400).optional().or(z.literal("")),
+  changelog: z.string().trim().max(400).optional(),
   accessType: z.nativeEnum(ComponentAccessType),
   sellerTargetPriceCents: z.number().int().positive().nullable(),
   swiftCode: z.string().trim().min(80).max(20000),
@@ -97,7 +100,8 @@ export function parseScreenshots(value: string | null) {
   }
 
   try {
-    return screenshotPayloadSchema.array().parse(JSON.parse(value));
+    const parsed = screenshotPayloadSchema.array().parse(JSON.parse(value));
+    return withStandardAltText(parsed);
   } catch {
     return [];
   }

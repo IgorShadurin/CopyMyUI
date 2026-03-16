@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { ArrowRight, Bookmark } from "lucide-react";
 
-import { ComponentCard } from "@/components/component-card";
-import { EmptyState } from "@/components/empty-state";
+import { ComponentCardList } from "@/components/component-card-list";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { AppActionLink } from "@/components/ui/app-action-link";
 import { getI18n } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { createPageMetadata } from "@/lib/seo";
@@ -26,34 +28,52 @@ export default async function FavoritesPage() {
   const favorites = await getFavoritesData(viewer.id);
 
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 md:py-14">
-      <section className="rounded-[2.2rem] border border-black/6 bg-white/85 p-5 shadow-[0_35px_90px_-45px_rgba(22,18,12,0.55)] backdrop-blur sm:rounded-[2.6rem] sm:p-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-          {messages.favoritesPage.eyebrow}
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
-          {messages.favoritesPage.title}
-        </h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-          {messages.favoritesPage.description}
-        </p>
-      </section>
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 md:py-10">
+      <DashboardShell
+        locale={locale}
+        messages={messages}
+        activeSection="favorites"
+      >
+        <section className="rounded-[1.8rem] border border-black/6 bg-white/90 p-4 shadow-[0_24px_70px_-52px_rgba(22,18,12,0.38)] backdrop-blur sm:rounded-[2rem] sm:p-5">
+          <h1 className="inline-flex items-center gap-2.5 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+            <Bookmark className="size-6 text-muted-foreground sm:size-7" />
+            {messages.favoritesPage.title}
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+            {messages.favoritesPage.description}
+          </p>
 
-      {favorites.length > 0 ? (
-        <section className="grid gap-6 lg:grid-cols-3">
-          {favorites.map((component) => (
-            <ComponentCard key={component.id} component={component} showFavorite={false} />
-          ))}
+          {favorites.length > 0 ? (
+            <div className="mt-4 border-t border-black/6 pt-4">
+              <ComponentCardList
+                components={favorites}
+                showFavorite={false}
+                className="gap-6 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3"
+              />
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[1.2rem] border border-black/6 bg-[rgba(252,251,247,0.94)] p-5 text-center sm:p-6">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {messages.favoritesPage.emptyEyebrow}
+              </p>
+              <h2 className="mt-3 text-2xl font-medium leading-tight text-foreground sm:text-[2rem]">
+                {messages.favoritesPage.emptyTitle}
+              </h2>
+              <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">
+                {messages.favoritesPage.emptyDescription}
+              </p>
+              <AppActionLink
+                href={withLocalePath(locale, "/components")}
+                uiSize="lg"
+                icon={<ArrowRight className="size-4" />}
+                className="mt-5"
+              >
+                {messages.favoritesPage.emptyAction}
+              </AppActionLink>
+            </div>
+          )}
         </section>
-      ) : (
-        <EmptyState
-          eyebrow={messages.favoritesPage.emptyEyebrow}
-          title={messages.favoritesPage.emptyTitle}
-          description={messages.favoritesPage.emptyDescription}
-          actionHref={withLocalePath(locale, "/components")}
-          actionLabel={messages.favoritesPage.emptyAction}
-        />
-      )}
+      </DashboardShell>
     </main>
   );
 }

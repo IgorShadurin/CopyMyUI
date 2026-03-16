@@ -95,6 +95,8 @@ export default async function EditComponentPage({
             storagePath: screenshot.storagePath,
             previewUrl: screenshot.previewUrl,
             previewStoragePath: screenshot.previewStoragePath,
+            width: screenshot.width,
+            height: screenshot.height,
             altText: screenshot.altText,
           })),
         }}

@@ -7,3 +7,4 @@ export const MIN_SCREENSHOTS = 1;
 export const DEFAULT_PREMIUM_MARKUP_PERCENT = 35;
 export const PLATFORM_CONFIG_ID = 1;
 export const FOOTER_X_URL = "https://x.com/Web3Igor";
+export const FOOTER_GITHUB_URL = "https://github.com/IgorShadurin/CopyMyUI";

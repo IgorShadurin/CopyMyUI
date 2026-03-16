@@ -30,6 +30,8 @@ const en = {
     dashboard: "Dashboard",
     moderation: "Moderation",
     admin: "Admin",
+    settings: "Settings",
+    apiKeys: "API keys",
     newComponent: "New component",
     favorites: "Favorites",
     purchases: "Purchases",
@@ -90,7 +92,7 @@ const en = {
   home: {
     title: "Build your SwiftUI library.",
     description:
-      "CopyMyUI is an open library of SwiftUI components. Creators draft privately, submit with screenshots, and publish to the moderated gallery once each component is ready.",
+      "CopyMyUI helps iOS developers ship faster with ready-to-use SwiftUI components. Browse proven UI patterns, copy production-ready code, and save favorites so you do not rebuild common screens from scratch.",
     searchPlaceholder: "Search titles, descriptions, creators, dashboards...",
     exploreComponents: "Explore components",
     topRatedNow: "Most favorited right now",
@@ -111,7 +113,7 @@ const en = {
     eyebrow: "Explore",
     title: "Public SwiftUI components",
     description:
-      "Search approved submissions, jump across categories, and save favorites for later.",
+      "Search submissions, jump across categories, and save favorites for later.",
     searchPlaceholder: "Search by title, summary, description, or creator",
     allCategories: "All categories",
     allAccessTypes: "All access types",
@@ -141,6 +143,7 @@ const en = {
     buyerPrice: "Price",
     swiftSourceEyebrow: "SwiftUI source",
     swiftSourceTitle: "Ready code",
+    lockedSourcePreviewLabel: "Part of the code preview",
     lockedSourceTitle: "Source hidden until purchase",
     lockedSourceDescription:
       "Public visitors can inspect the screenshots and overview. Buy this component to reveal the full SwiftUI source on this page.",
@@ -174,9 +177,9 @@ const en = {
   newComponentPage: {
     noticeSaved: "Draft saved. Keep refining it privately.",
     eyebrow: "New component",
-    title: "Create a private SwiftUI draft",
+    title: "Create a new component publication",
     description:
-      "Your work stays private until a moderator approves it. Save a draft as often as you need.",
+      "Set up a new component entry, upload screenshots, and submit when it is ready for moderation.",
   },
   editComponentPage: {
     noticeSaved:
@@ -339,6 +342,7 @@ const en = {
     componentTitle: "Component title",
     componentTitlePlaceholder: "Aurora Tab Orbit",
     primaryCategory: "Primary category",
+    primaryCategoryPlaceholder: "Choose a category",
     relatedCategories: "Related categories",
     categoryHint: "Choose up to 3 categories total. The primary category is the main browsing lane.",
     categoryLockedHint:
@@ -346,6 +350,7 @@ const en = {
     primaryCategorySelected: "Primary category",
     relatedCategoryOption: "Optional related category",
     summary: "Summary",
+    summaryHint: "Short card text for listings (20-160 characters).",
     descriptionLabel: "Description",
     changelog: "Changelog",
     monetizationTitle: "Monetization",
@@ -366,6 +371,8 @@ const en = {
     sourceTitle: "SwiftUI source",
     sourceDescription:
       "The editor accepts SwiftUI only. Include a `View` struct and the `body` layout.",
+    sourceThemeDark: "Dark",
+    sourceThemeLight: "Light",
     saveDraft: "Save draft",
     saveDraftPending: "Saving draft...",
     submitForReview: "Submit for review",
@@ -379,6 +386,7 @@ const en = {
     uploading: "Uploading...",
     altText: "Alt text",
     removeScreenshot: "Remove screenshot",
+    removeScreenshotConfirm: "Remove this screenshot?",
     tooMany: "You can upload up to {max} screenshots.",
     uploadFailed: "Upload failed.",
   },
@@ -498,6 +506,8 @@ const es: typeof en = {
     dashboard: "Panel",
     moderation: "Moderación",
     admin: "Administración",
+    settings: "Ajustes",
+    apiKeys: "Claves API",
     newComponent: "Nuevo componente",
     favorites: "Favoritos",
     purchases: "Compras",
@@ -558,7 +568,7 @@ const es: typeof en = {
   home: {
     title: "Crea tu biblioteca de componentes SwiftUI.",
     description:
-      "CopyMyUI es una biblioteca abierta de componentes SwiftUI. Los creadores trabajan en privado, envían capturas y publican en la galería moderada cuando cada componente está listo.",
+      "CopyMyUI ayuda a los equipos iOS a lanzar más rápido con componentes SwiftUI listos para usar. Descubre patrones de UI probados, copia código listo para producción y guarda favoritos para no reconstruir pantallas comunes desde cero.",
     searchPlaceholder: "Buscar títulos, descripciones, creadores y dashboards...",
     exploreComponents: "Explorar componentes",
     topRatedNow: "Más guardados ahora",
@@ -609,6 +619,7 @@ const es: typeof en = {
     buyerPrice: "Precio",
     swiftSourceEyebrow: "Código SwiftUI",
     swiftSourceTitle: "Código listo",
+    lockedSourcePreviewLabel: "Vista previa parcial del código",
     lockedSourceTitle: "Código oculto hasta la compra",
     lockedSourceDescription:
       "Los visitantes públicos pueden revisar las capturas y el resumen. Compra este componente para revelar el código SwiftUI completo en esta página.",
@@ -642,9 +653,9 @@ const es: typeof en = {
   newComponentPage: {
     noticeSaved: "Borrador guardado. Sigue refinándolo en privado.",
     eyebrow: "Nuevo componente",
-    title: "Crea un borrador SwiftUI privado",
+    title: "Crea una nueva publicación de componente",
     description:
-      "Tu trabajo seguirá privado hasta que un moderador lo apruebe. Puedes guardar un borrador tantas veces como necesites.",
+      "Configura una nueva publicación del componente, sube capturas y envíala cuando esté lista para moderación.",
   },
   editComponentPage: {
     noticeSaved: "Borrador guardado. Envíalo cuando quieras que los moderadores revisen la actualización.",
@@ -809,6 +820,7 @@ const es: typeof en = {
     componentTitle: "Título del componente",
     componentTitlePlaceholder: "Orbita Aurora",
     primaryCategory: "Categoría principal",
+    primaryCategoryPlaceholder: "Elige una categoría",
     relatedCategories: "Categorías relacionadas",
     categoryHint:
       "Elige hasta 3 categorías en total. La categoría principal es la vía principal de navegación.",
@@ -817,6 +829,7 @@ const es: typeof en = {
     primaryCategorySelected: "Categoría principal",
     relatedCategoryOption: "Categoría relacionada opcional",
     summary: "Resumen",
+    summaryHint: "Texto corto para tarjetas y listados (20-160 caracteres).",
     descriptionLabel: "Descripción",
     changelog: "Registro de cambios",
     monetizationTitle: "Monetización",
@@ -837,6 +850,8 @@ const es: typeof en = {
     sourceTitle: "Código SwiftUI",
     sourceDescription:
       "El editor acepta solo SwiftUI. Incluye una estructura `View` y el layout `body`.",
+    sourceThemeDark: "Oscuro",
+    sourceThemeLight: "Claro",
     saveDraft: "Guardar borrador",
     saveDraftPending: "Guardando borrador...",
     submitForReview: "Enviar para revisión",
@@ -850,6 +865,7 @@ const es: typeof en = {
     uploading: "Subiendo...",
     altText: "Texto alternativo",
     removeScreenshot: "Eliminar captura",
+    removeScreenshotConfirm: "¿Eliminar esta captura?",
     tooMany: "Puedes subir hasta {max} capturas.",
     uploadFailed: "La subida falló.",
   },
@@ -969,6 +985,8 @@ const ru: typeof en = {
     dashboard: "Панель",
     moderation: "Модерация",
     admin: "Админ",
+    settings: "Настройки",
+    apiKeys: "API-ключи",
     newComponent: "Новый компонент",
     favorites: "Избранное",
     purchases: "Покупки",
@@ -1029,7 +1047,7 @@ const ru: typeof en = {
   home: {
     title: "Создайте свою библиотеку SwiftUI-компонентов.",
     description:
-      "CopyMyUI — это открытая библиотека SwiftUI-компонентов. Авторы работают с черновиками приватно, отправляют скриншоты и публикуют компоненты в модерируемой галерее, когда всё готово.",
+      "CopyMyUI помогает iOS-командам выпускать продукты быстрее с готовыми SwiftUI-компонентами. Находите проверенные UI-паттерны, копируйте код для продакшена и сохраняйте избранное, чтобы не собирать типовые экраны с нуля.",
     searchPlaceholder: "Ищите названия, описания, авторов и дашборды...",
     exploreComponents: "Смотреть компоненты",
     topRatedNow: "Самое сохраненное сейчас",
@@ -1080,6 +1098,7 @@ const ru: typeof en = {
     buyerPrice: "Цена",
     swiftSourceEyebrow: "Исходник SwiftUI",
     swiftSourceTitle: "Готовый код",
+    lockedSourcePreviewLabel: "Предпросмотр части кода",
     lockedSourceTitle: "Исходник скрыт до покупки",
     lockedSourceDescription:
       "Публичные посетители могут посмотреть скриншоты и описание. Купите компонент, чтобы открыть полный SwiftUI-код на этой странице.",
@@ -1113,9 +1132,9 @@ const ru: typeof en = {
   newComponentPage: {
     noticeSaved: "Черновик сохранён. Продолжайте дорабатывать его приватно.",
     eyebrow: "Новый компонент",
-    title: "Создайте приватный SwiftUI-черновик",
+    title: "Создайте новую публикацию компонента",
     description:
-      "Ваша работа останется приватной, пока модератор её не одобрит. Сохраняйте черновик столько раз, сколько нужно.",
+      "Подготовьте новую публикацию компонента, загрузите скриншоты и отправьте её на модерацию, когда всё будет готово.",
   },
   editComponentPage: {
     noticeSaved: "Черновик сохранён. Отправьте его, когда захотите передать обновление модераторам.",
@@ -1280,6 +1299,7 @@ const ru: typeof en = {
     componentTitle: "Название компонента",
     componentTitlePlaceholder: "Орбита Аврора",
     primaryCategory: "Основная категория",
+    primaryCategoryPlaceholder: "Выберите категорию",
     relatedCategories: "Связанные категории",
     categoryHint:
       "Выберите до 3 категорий всего. Основная категория задаёт основное направление каталога.",
@@ -1288,6 +1308,7 @@ const ru: typeof en = {
     primaryCategorySelected: "Основная категория",
     relatedCategoryOption: "Необязательная связанная категория",
     summary: "Краткое описание",
+    summaryHint: "Короткий текст для карточек и списков (20-160 символов).",
     descriptionLabel: "Описание",
     changelog: "Список изменений",
     monetizationTitle: "Монетизация",
@@ -1308,6 +1329,8 @@ const ru: typeof en = {
     sourceTitle: "Исходник SwiftUI",
     sourceDescription:
       "Редактор принимает только SwiftUI. Включите структуру `View` и layout `body`.",
+    sourceThemeDark: "Темный",
+    sourceThemeLight: "Светлый",
     saveDraft: "Сохранить черновик",
     saveDraftPending: "Сохранение...",
     submitForReview: "Отправить на проверку",
@@ -1321,6 +1344,7 @@ const ru: typeof en = {
     uploading: "Загрузка...",
     altText: "Alt-текст",
     removeScreenshot: "Удалить скриншот",
+    removeScreenshotConfirm: "Удалить этот скриншот?",
     tooMany: "Можно загрузить не более {max} скриншотов.",
     uploadFailed: "Не удалось загрузить файл.",
   },
@@ -1440,6 +1464,8 @@ const de: typeof en = {
     dashboard: "Übersicht",
     moderation: "Prüfung",
     admin: "Verwaltung",
+    settings: "Einstellungen",
+    apiKeys: "API-Schlüssel",
     newComponent: "Neuer Baustein",
     favorites: "Favoriten",
     purchases: "Käufe",
@@ -1500,7 +1526,7 @@ const de: typeof en = {
   home: {
     title: "Baue deine SwiftUI-Komponentenbibliothek.",
     description:
-      "CopyMyUI ist eine offene Bibliothek für SwiftUI-Komponenten. Creator arbeiten privat an Entwürfen, reichen Screenshots ein und veröffentlichen Komponenten erst dann in der moderierten Galerie, wenn alles bereit ist.",
+      "CopyMyUI hilft iOS-Teams, mit sofort nutzbaren SwiftUI-Komponenten schneller zu liefern. Finde bewährte UI-Muster, übernimm produktionsreifen Code und speichere Favoriten, damit du häufige Screens nicht jedes Mal neu bauen musst.",
     searchPlaceholder: "Suche nach Titeln, Beschreibungen, Erstellern und Dashboards...",
     exploreComponents: "Komponenten entdecken",
     topRatedNow: "Derzeit meistgespeichert",
@@ -1551,6 +1577,7 @@ const de: typeof en = {
     buyerPrice: "Preis",
     swiftSourceEyebrow: "SwiftUI-Quellcode",
     swiftSourceTitle: "Fertiger Code",
+    lockedSourcePreviewLabel: "Teilweise Codevorschau",
     lockedSourceTitle: "Quellcode bis zum Kauf verborgen",
     lockedSourceDescription:
       "Öffentliche Besucher können Screenshots und Überblick sehen. Kaufe diese Komponente, um den vollständigen SwiftUI-Code auf dieser Seite freizuschalten.",
@@ -1584,9 +1611,9 @@ const de: typeof en = {
   newComponentPage: {
     noticeSaved: "Entwurf gespeichert. Verfeinere ihn in Ruhe weiter.",
     eyebrow: "Neue Komponente",
-    title: "Einen privaten SwiftUI-Entwurf erstellen",
+    title: "Neue Komponenten-Veröffentlichung erstellen",
     description:
-      "Deine Arbeit bleibt privat, bis ein Moderator sie freigibt. Du kannst den Entwurf beliebig oft speichern.",
+      "Lege eine neue Komponenten-Veröffentlichung an, lade Screenshots hoch und reiche sie ein, sobald sie bereit für die Moderation ist.",
   },
   editComponentPage: {
     noticeSaved: "Entwurf gespeichert. Reiche ihn ein, sobald Moderatoren das Update prüfen sollen.",
@@ -1751,6 +1778,7 @@ const de: typeof en = {
     componentTitle: "Komponententitel",
     componentTitlePlaceholder: "Aurora-Orbit",
     primaryCategory: "Primäre Kategorie",
+    primaryCategoryPlaceholder: "Kategorie auswählen",
     relatedCategories: "Verwandte Kategorien",
     categoryHint:
       "Wähle insgesamt bis zu 3 Kategorien. Die primäre Kategorie ist die wichtigste Browsing-Spur.",
@@ -1759,6 +1787,7 @@ const de: typeof en = {
     primaryCategorySelected: "Primäre Kategorie",
     relatedCategoryOption: "Optionale verwandte Kategorie",
     summary: "Kurztext",
+    summaryHint: "Kurzer Kartentext für Listenansichten (20-160 Zeichen).",
     descriptionLabel: "Beschreibung",
     changelog: "Änderungen",
     monetizationTitle: "Monetarisierung",
@@ -1779,6 +1808,8 @@ const de: typeof en = {
     sourceTitle: "SwiftUI-Quellcode",
     sourceDescription:
       "Der Editor akzeptiert nur SwiftUI. Füge eine `View`-Struktur und das `body`-Layout hinzu.",
+    sourceThemeDark: "Dunkel",
+    sourceThemeLight: "Hell",
     saveDraft: "Entwurf speichern",
     saveDraftPending: "Entwurf wird gespeichert...",
     submitForReview: "Zur Prüfung einreichen",
@@ -1792,6 +1823,7 @@ const de: typeof en = {
     uploading: "Wird hochgeladen...",
     altText: "Alt-Text",
     removeScreenshot: "Screenshot entfernen",
+    removeScreenshotConfirm: "Diesen Screenshot entfernen?",
     tooMany: "Du kannst bis zu {max} Screenshots hochladen.",
     uploadFailed: "Upload fehlgeschlagen.",
   },

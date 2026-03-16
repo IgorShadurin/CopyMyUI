@@ -1,11 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 
 import { UserRole } from "@prisma/client";
 import {
   Bookmark,
+  KeyRound,
   LayoutTemplate,
+  LogOut,
   Menu,
   Plus,
+  Settings,
   ShieldCheck,
   ShoppingBag,
   SlidersHorizontal,
@@ -65,9 +69,14 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex min-w-0 items-center gap-4 xl:gap-8">
           <Link href={withLocalePath(locale, "/")} className="flex min-w-0 items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#f97316_0%,#fb7185_45%,#0ea5e9_100%)] text-sm font-bold text-white shadow-lg sm:size-10">
-              CM
-            </div>
+            <Image
+              src="/icon.png"
+              alt={messages.app.name}
+              width={40}
+              height={40}
+              priority
+              className="size-9 rounded-2xl shadow-sm sm:size-10"
+            />
             <div className="min-w-0">
               <p className="truncate text-base font-extrabold tracking-tight text-foreground sm:text-lg">
                 {messages.app.name}
@@ -77,13 +86,19 @@ export function SiteHeader({
         </div>
 
         <div className="hidden items-center gap-3 xl:flex">
+          <LocaleSwitcher
+            locale={locale}
+            label={messages.localeSwitcher.label}
+            languageLabels={messages.languages}
+            className="flex"
+          />
           {viewer ? (
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
-                    "h-12 items-center gap-3 rounded-full border-black/8 bg-white/90 px-2.5 shadow-sm"
+                    "h-11 items-center gap-3 rounded-full border-black/8 bg-white/90 px-2.5 shadow-sm"
                   )}
                   aria-label={messages.header.menu}
                 >
@@ -172,9 +187,9 @@ export function SiteHeader({
                   <DropdownMenuSeparator className="my-3 bg-black/6" />
 
                   <form action={signOutAction}>
-                    <Button type="submit" variant="outline" size="sm" className="w-full rounded-full">
+                    <AppActionButton type="submit" tone="outline" uiSize="sm" icon={<LogOut className="size-4" />} className="w-full justify-center">
                       {messages.header.signOut}
-                    </Button>
+                    </AppActionButton>
                   </form>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -186,12 +201,6 @@ export function SiteHeader({
               </AppActionButton>
             </form>
           )}
-          <LocaleSwitcher
-            locale={locale}
-            label={messages.localeSwitcher.label}
-            languageLabels={messages.languages}
-            className="flex"
-          />
         </div>
 
         <div className="flex items-center gap-2 xl:hidden">
@@ -211,7 +220,7 @@ export function SiteHeader({
                   size={viewer ? "sm" : "icon-sm"}
                   className={cn(
                     "rounded-full border-black/8 bg-white/90 shadow-sm",
-                    viewer ? "h-12 max-w-[min(17rem,calc(100vw-8rem))] gap-3 px-2.5" : ""
+                    viewer ? "h-11 max-w-[min(17rem,calc(100vw-8rem))] gap-3 px-2.5" : ""
                   )}
                   aria-label={messages.header.menu}
                 />
@@ -261,28 +270,6 @@ export function SiteHeader({
                   </div>
                 ) : null}
 
-                <div className="grid gap-2 rounded-[1.4rem] border border-black/6 bg-white/90 p-2">
-                  {viewer ? (
-                    <Link
-                      href={withLocalePath(locale, "/dashboard/components/new")}
-                      className={cn(
-                        buttonVariants({ variant: "ghost", size: "sm" }),
-                        "justify-start rounded-[1rem] px-3"
-                      )}
-                    >
-                      <Plus className="size-4" />
-                      {messages.header.newComponent}
-                    </Link>
-                  ) : null}
-                </div>
-
-                <LocaleSwitcher
-                  locale={locale}
-                  label={messages.localeSwitcher.label}
-                  languageLabels={messages.languages}
-                  className="w-full"
-                />
-
                 {viewer ? (
                   <div className="rounded-[1.4rem] border border-black/6 bg-white/90 p-2">
                     <div className="grid gap-2">
@@ -296,6 +283,40 @@ export function SiteHeader({
                         <LayoutTemplate className="size-4" />
                         {messages.header.dashboard}
                       </Link>
+                      <Link
+                        href={withLocalePath(locale, "/dashboard#dashboard-settings")}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "justify-start rounded-[1rem] px-3"
+                        )}
+                      >
+                        <Settings className="size-4" />
+                        {messages.header.settings}
+                      </Link>
+                      <Link
+                        href={withLocalePath(locale, "/dashboard/api-keys")}
+                        className={cn(
+                          buttonVariants({ variant: "ghost", size: "sm" }),
+                          "justify-start rounded-[1rem] px-3"
+                        )}
+                      >
+                        <KeyRound className="size-4" />
+                        {messages.header.apiKeys}
+                      </Link>
+                    </div>
+                  </div>
+                ) : null}
+
+                <LocaleSwitcher
+                  locale={locale}
+                  label={messages.localeSwitcher.label}
+                  languageLabels={messages.languages}
+                  className="w-full"
+                />
+
+                {viewer ? (
+                  <div className="rounded-[1.4rem] border border-black/6 bg-white/90 p-2">
+                    <div className="grid gap-2">
                       {isStaff ? (
                         <Link
                           href={withLocalePath(locale, "/moderation")}
@@ -320,30 +341,10 @@ export function SiteHeader({
                           {messages.header.admin}
                         </Link>
                       ) : null}
-                      <Link
-                        href={withLocalePath(locale, "/favorites")}
-                        className={cn(
-                          buttonVariants({ variant: "ghost", size: "sm" }),
-                          "justify-start rounded-[1rem] px-3"
-                        )}
-                      >
-                        <Bookmark className="size-4" />
-                        {messages.header.favorites}
-                      </Link>
-                      <Link
-                        href={withLocalePath(locale, "/purchases")}
-                        className={cn(
-                          buttonVariants({ variant: "ghost", size: "sm" }),
-                          "justify-start rounded-[1rem] px-3"
-                        )}
-                      >
-                        <ShoppingBag className="size-4" />
-                        {messages.header.purchases}
-                      </Link>
                       <form action={signOutAction}>
-                        <Button type="submit" variant="outline" size="sm" className="w-full rounded-full">
+                        <AppActionButton type="submit" tone="outline" uiSize="sm" icon={<LogOut className="size-4" />} className="w-full justify-center">
                           {messages.header.signOut}
-                        </Button>
+                        </AppActionButton>
                       </form>
                     </div>
                   </div>

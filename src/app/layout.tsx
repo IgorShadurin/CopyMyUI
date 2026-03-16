@@ -49,6 +49,15 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     ...baseMetadata,
     metadataBase: new URL(getBaseUrl()),
+    manifest: "/manifest.webmanifest",
+    icons: {
+      icon: [
+        { url: "/favicon.ico", sizes: "any" },
+        { url: "/icon.png", type: "image/png", sizes: "512x512" },
+      ],
+      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+      shortcut: [{ url: "/favicon.ico" }],
+    },
     applicationName: APP_NAME,
     category: "software",
     creator: "CopyMyUI",

@@ -1,5 +1,6 @@
 import {
   ComponentAccessType,
+  ComponentStatus,
   Prisma,
   type PrismaClient,
 } from "@prisma/client";
@@ -10,6 +11,7 @@ import { buildSearchIndexQuery, normalizeSearchQuery } from "@/lib/search";
 type SearchClient = PrismaClient | Prisma.TransactionClient;
 
 let ensureSearchPromise: Promise<void> | null = null;
+let ftsSearchDisabled = process.env.NODE_ENV === "development";
 
 async function createSearchTable(client: SearchClient) {
   await client.$executeRawUnsafe(`
@@ -175,50 +177,163 @@ export async function searchApprovedComponentIds({
     };
   }
 
-  await ensureSearchInfrastructure();
+  if (ftsSearchDisabled) {
+    const fallbackIds = await searchApprovedComponentIdsFallback({
+      normalizedQuery,
+      categorySlug,
+      accessType,
+      sort,
+      limit,
+    });
 
+    return {
+      ids: fallbackIds,
+      normalizedQuery,
+    };
+  }
+
+  try {
+    await ensureSearchInfrastructure();
+
+    const accessFilter =
+      accessType === "premium"
+        ? Prisma.sql`AND revision.accessType = ${ComponentAccessType.PREMIUM}`
+        : accessType === "free"
+          ? Prisma.sql`AND revision.accessType = ${ComponentAccessType.FREE}`
+          : Prisma.empty;
+
+    const categoryFilter = categorySlug
+      ? Prisma.sql`
+          AND EXISTS (
+            SELECT 1
+            FROM "ComponentCategory" component_category
+            JOIN "Category" category ON category.id = component_category.categoryId
+            WHERE component_category.componentId = component.id
+              AND category.slug = ${categorySlug}
+          )
+        `
+      : Prisma.empty;
+
+    const orderBy =
+      sort === "newest"
+        ? Prisma.raw(
+            "component.publishedAt DESC, rank ASC, component.favoritesCount DESC"
+          )
+        : Prisma.raw(
+            "rank ASC, component.favoritesCount DESC, component.publishedAt DESC"
+          );
+
+    const rows = await prisma.$queryRaw<Array<{ componentId: string }>>(Prisma.sql`
+      SELECT component_search.componentId AS componentId, bm25(component_search) AS rank
+      FROM component_search
+      JOIN "Component" component ON component.id = component_search.componentId
+      JOIN "ComponentRevision" revision ON revision.id = component.approvedRevisionId
+      WHERE component_search MATCH ${ftsQuery}
+        ${accessFilter}
+        ${categoryFilter}
+      ORDER BY ${orderBy}
+      LIMIT ${Math.max(1, Math.min(limit, 100))}
+    `);
+
+    return {
+      ids: Array.from(new Set(rows.map((row) => row.componentId))),
+      normalizedQuery,
+    };
+  } catch (error) {
+    ftsSearchDisabled = true;
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "FTS search failed; disabling FTS for this process and falling back to relation query.",
+        error
+      );
+    }
+
+    const fallbackIds = await searchApprovedComponentIdsFallback({
+      normalizedQuery,
+      categorySlug,
+      accessType,
+      sort,
+      limit,
+    });
+
+    return {
+      ids: fallbackIds,
+      normalizedQuery,
+    };
+  }
+}
+
+async function searchApprovedComponentIdsFallback({
+  normalizedQuery,
+  categorySlug,
+  accessType,
+  sort,
+  limit,
+}: {
+  normalizedQuery: string;
+  categorySlug?: string;
+  accessType?: "free" | "premium";
+  sort?: "top" | "newest";
+  limit?: number;
+}) {
+  const safeLimit = Math.max(1, Math.min(limit ?? 48, 100));
   const accessFilter =
     accessType === "premium"
-      ? Prisma.sql`AND revision.accessType = ${ComponentAccessType.PREMIUM}`
+      ? { approvedRevision: { is: { accessType: ComponentAccessType.PREMIUM } } }
       : accessType === "free"
-        ? Prisma.sql`AND revision.accessType = ${ComponentAccessType.FREE}`
-        : Prisma.empty;
-
+        ? { approvedRevision: { is: { accessType: ComponentAccessType.FREE } } }
+        : {};
   const categoryFilter = categorySlug
-    ? Prisma.sql`
-        AND EXISTS (
-          SELECT 1
-          FROM "ComponentCategory" component_category
-          JOIN "Category" category ON category.id = component_category.categoryId
-          WHERE component_category.componentId = component.id
-            AND category.slug = ${categorySlug}
-        )
-      `
-    : Prisma.empty;
-
+    ? {
+        categoryLinks: {
+          some: {
+            category: {
+              slug: categorySlug,
+            },
+          },
+        },
+      }
+    : {};
   const orderBy =
     sort === "newest"
-      ? Prisma.raw(
-          "component.publishedAt DESC, rank ASC, component.favoritesCount DESC"
-        )
-      : Prisma.raw(
-          "rank ASC, component.favoritesCount DESC, component.publishedAt DESC"
-        );
+      ? [
+          { publishedAt: "desc" as const },
+          { favoritesCount: "desc" as const },
+        ]
+      : [
+          { favoritesCount: "desc" as const },
+          { publishedAt: "desc" as const },
+        ];
 
-  const rows = await prisma.$queryRaw<Array<{ componentId: string }>>(Prisma.sql`
-    SELECT component_search.componentId AS componentId, bm25(component_search) AS rank
-    FROM component_search
-    JOIN "Component" component ON component.id = component_search.componentId
-    JOIN "ComponentRevision" revision ON revision.id = component.approvedRevisionId
-    WHERE component_search MATCH ${ftsQuery}
-      ${accessFilter}
-      ${categoryFilter}
-    ORDER BY ${orderBy}
-    LIMIT ${Math.max(1, Math.min(limit, 100))}
-  `);
+  const components = await prisma.component.findMany({
+    where: {
+      status: ComponentStatus.APPROVED,
+      approvedRevisionId: { not: null },
+      ...accessFilter,
+      ...categoryFilter,
+      OR: [
+        { slug: { contains: normalizedQuery } },
+        { owner: { name: { contains: normalizedQuery } } },
+        { owner: { email: { contains: normalizedQuery } } },
+        { owner: { profileSlug: { contains: normalizedQuery } } },
+        {
+          approvedRevision: {
+            is: {
+              OR: [
+                { title: { contains: normalizedQuery } },
+                { summary: { contains: normalizedQuery } },
+                { description: { contains: normalizedQuery } },
+              ],
+            },
+          },
+        },
+      ],
+    },
+    orderBy,
+    take: safeLimit,
+    select: { id: true },
+  });
 
-  return {
-    ids: Array.from(new Set(rows.map((row) => row.componentId))),
-    normalizedQuery,
-  };
+  return components.map((component) => component.id);
 }

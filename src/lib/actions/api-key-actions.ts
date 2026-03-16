@@ -49,7 +49,7 @@ export async function createApiKeyAction(
   try {
     const input = apiKeyCreateSchema.parse({
       name: String(formData.get("name") ?? ""),
-      canPurchase: formData.get("canPurchase") === "on",
+      canPurchase: false,
     });
     const created = await createApiKeyForUser(viewer.id, input);
 
@@ -79,7 +79,7 @@ export async function updateApiKeyAction(formData: FormData) {
     const input = apiKeyUpdateSchema.parse({
       apiKeyId: String(formData.get("apiKeyId") ?? ""),
       name: String(formData.get("name") ?? ""),
-      canPurchase: formData.get("canPurchase") === "on",
+      canPurchase: false,
     });
 
     const apiKey = await updateApiKeyForUser(viewer.id, input);

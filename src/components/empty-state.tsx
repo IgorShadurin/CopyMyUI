@@ -1,7 +1,7 @@
-import Link from "next/link";
+import type { ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 
-import { buttonVariants } from "@/components/ui/button-variants";
-import { cn } from "@/lib/utils";
+import { AppActionLink } from "@/components/ui/app-action-link";
 
 export function EmptyState({
   eyebrow,
@@ -9,12 +9,14 @@ export function EmptyState({
   description,
   actionHref,
   actionLabel,
+  actionIcon,
 }: {
   eyebrow: string;
   title: string;
   description: string;
   actionHref?: string;
   actionLabel?: string;
+  actionIcon?: ReactNode;
 }) {
   return (
     <div className="rounded-[2rem] border border-black/6 bg-white/80 p-10 text-center shadow-[0_30px_80px_-45px_rgba(32,22,12,0.45)]">
@@ -26,12 +28,14 @@ export function EmptyState({
         {description}
       </p>
       {actionHref && actionLabel ? (
-        <Link
+        <AppActionLink
           href={actionHref}
-          className={cn(buttonVariants({ size: "lg" }), "mt-6 rounded-full px-5")}
+          uiSize="lg"
+          icon={actionIcon ?? <ArrowRight className="size-4" />}
+          className="mt-6"
         >
           {actionLabel}
-        </Link>
+        </AppActionLink>
       ) : null}
     </div>
   );

@@ -58,7 +58,12 @@ export function LocaleSwitcher({
             "h-11 min-w-[8.75rem] justify-between rounded-full border-black/8 bg-white/85 px-4 shadow-sm"
           )}
         >
-          <span className="truncate">{languageLabels[locale]}</span>
+          <span className="inline-flex items-center gap-2 truncate">
+            <span aria-hidden="true" className="text-base">
+              {localeFlags[locale]}
+            </span>
+            <span className="truncate">{languageLabels[locale]}</span>
+          </span>
           <ChevronDown className="size-4 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent

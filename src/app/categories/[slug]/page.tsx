@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { BrowseRail } from "@/components/browse-rail";
-import { ComponentCard } from "@/components/component-card";
+import { ComponentCardList } from "@/components/component-card-list";
 import { EmptyState } from "@/components/empty-state";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
@@ -75,7 +75,7 @@ export default async function CategoryPage({
 
         <div className="min-w-0 space-y-6">
           <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="rounded-[1.4rem] border border-black/8 bg-[rgba(252,251,247,0.98)] p-4 sm:p-5">
               <div className="max-w-3xl">
                 <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
                   <CategoryIcon
@@ -88,42 +88,20 @@ export default async function CategoryPage({
                   {category.description}
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[28rem]">
-                <div className="rounded-[1.4rem] border border-black/6 bg-[rgba(252,251,247,0.96)] px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    {messages.categoryPage.approvedCount}
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold text-foreground">
-                    {categoryPage.stats.approvedCount}
-                  </p>
-                </div>
-                <div className="rounded-[1.4rem] border border-black/6 bg-[rgba(252,251,247,0.96)] px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    {messages.categoryPage.premiumCount}
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold text-foreground">
-                    {categoryPage.stats.premiumCount}
-                  </p>
-                </div>
-                <div className="rounded-[1.4rem] border border-black/6 bg-[rgba(252,251,247,0.96)] px-4 py-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                    {messages.categoryPage.featuredCount}
-                  </p>
-                  <p className="mt-2 text-3xl font-semibold text-foreground">
-                    {categoryPage.stats.featuredCount}
-                  </p>
-                </div>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/8 pt-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                  {messages.categoryPage.approvedCount}
+                </p>
+                <span className="inline-flex min-w-10 items-center justify-center rounded-full bg-foreground px-3 py-1 text-sm font-semibold text-background">
+                  {categoryPage.stats.approvedCount}
+                </span>
               </div>
             </div>
           </section>
 
           {categoryPage.components.length > 0 ? (
             <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {categoryPage.components.map((component) => (
-                  <ComponentCard key={component.id} component={component} />
-                ))}
-              </div>
+              <ComponentCardList components={categoryPage.components} />
             </section>
           ) : (
             <EmptyState

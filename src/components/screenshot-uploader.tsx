@@ -1,16 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import { useRef, useState } from "react";
 
 import { ImagePlus, Trash2, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 
+import { ComponentMediaPreview } from "@/components/component-media-preview";
 import { useI18n } from "@/i18n/client";
 import { formatMessage } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MAX_SCREENSHOTS } from "@/lib/constants";
+import { withStandardAltText } from "@/lib/screenshot-alt-text";
 
 export type ScreenshotDraft = {
   mediaType: "IMAGE" | "VIDEO";
@@ -19,18 +19,24 @@ export type ScreenshotDraft = {
   storagePath: string;
   previewUrl?: string | null;
   previewStoragePath?: string | null;
+  width?: number | null;
+  height?: number | null;
   altText: string;
 };
 
 export function ScreenshotUploader({
   name,
   initialScreenshots,
+  onScreenshotsChange,
 }: {
   name: string;
   initialScreenshots: ScreenshotDraft[];
+  onScreenshotsChange?: (screenshots: ScreenshotDraft[]) => void;
 }) {
   const { messages } = useI18n();
-  const [screenshots, setScreenshots] = useState(initialScreenshots);
+  const [screenshots, setScreenshots] = useState(() =>
+    withStandardAltText(initialScreenshots)
+  );
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -100,7 +106,11 @@ export function ScreenshotUploader({
               return;
             }
 
-            setScreenshots((current) => [...current, ...payload.files]);
+            setScreenshots((current) => {
+              const next = withStandardAltText([...current, ...payload.files]);
+              onScreenshotsChange?.(next);
+              return next;
+            });
           } catch {
             toast.error(messages.upload.uploadFailed);
           } finally {
@@ -116,51 +126,37 @@ export function ScreenshotUploader({
             key={`${screenshot.storagePath}-${index}`}
             className="overflow-hidden rounded-[1.5rem] border border-black/8 bg-white shadow-[0_24px_60px_-40px_rgba(28,21,12,0.45)]"
           >
-            <div className="aspect-[4/3] bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.55),_rgba(255,255,255,0.06)),linear-gradient(135deg,#fff6e5_0%,#ffffff_55%,#ecfeff_100%)] p-3">
-              {screenshot.mediaType === "VIDEO" ? (
-                <video
-                  src={screenshot.url}
-                  controls
-                  preload="metadata"
-                  playsInline
-                  className="size-full rounded-[1rem] object-cover"
-                />
-              ) : (
-                <Image
-                  src={screenshot.previewUrl ?? screenshot.url}
-                  alt={screenshot.altText}
-                  width={1200}
-                  height={900}
-                  unoptimized
-                  className="size-full rounded-[1rem] object-cover"
-                />
-              )}
+            <div className="bg-[#0f0f10] p-3">
+              <ComponentMediaPreview
+                item={screenshot}
+                className="max-w-[13rem] sm:max-w-[14rem]"
+                imageSource="preview"
+              />
             </div>
             <div className="space-y-3 p-4">
-              <label className="block text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                {messages.upload.altText}
-              </label>
-              <Input
-                value={screenshot.altText}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setScreenshots((current) =>
-                    current.map((item, currentIndex) =>
-                      currentIndex === index ? { ...item, altText: nextValue } : item
-                    )
-                  );
-                }}
-              />
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                {screenshot.altText}
+              </p>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="rounded-full text-rose-600"
-                onClick={() =>
-                  setScreenshots((current) =>
-                    current.filter((_, currentIndex) => currentIndex !== index)
-                  )
-                }
+                onClick={() => {
+                  const shouldRemove = window.confirm(messages.upload.removeScreenshotConfirm);
+
+                  if (!shouldRemove) {
+                    return;
+                  }
+
+                  setScreenshots((current) => {
+                    const next = withStandardAltText(
+                      current.filter((_, currentIndex) => currentIndex !== index)
+                    );
+                    onScreenshotsChange?.(next);
+                    return next;
+                  });
+                }}
               >
                 <Trash2 className="size-4" />
                 {messages.upload.removeScreenshot}
