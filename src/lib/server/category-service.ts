@@ -65,7 +65,11 @@ export async function updateCategoryByAdmin(
 
 export async function getPublicCategoryPageData(
   slug: string,
-  viewerId?: string | null
+  viewerId?: string | null,
+  options?: {
+    page?: number;
+    pageSize?: number;
+  }
 ) {
   const platformConfig = await getPlatformConfig();
   const category = await prisma.category.findUnique({
@@ -79,14 +83,29 @@ export async function getPublicCategoryPageData(
     return null;
   }
 
-  const components = await prisma.component.findMany({
-    where: {
-      approvedRevisionId: { not: null },
-      categoryLinks: {
-        some: {
-          categoryId: category.id,
-        },
+  const where = {
+    approvedRevisionId: { not: null },
+    categoryLinks: {
+      some: {
+        categoryId: category.id,
       },
+    },
+  } satisfies Prisma.ComponentWhereInput;
+
+  const requestedPageSize = options?.pageSize ?? 8;
+  const pageSize = Math.max(1, Math.min(24, requestedPageSize));
+  const requestedPage = options?.page ?? 1;
+  const normalizedRequestedPage = Math.max(1, Math.trunc(requestedPage));
+
+  const totalCount = await prisma.component.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const currentPage = Math.min(normalizedRequestedPage, totalPages);
+
+  const components = await prisma.component.findMany({
+    skip: (currentPage - 1) * pageSize,
+    take: pageSize,
+    where: {
+      ...where,
     },
     orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
     include: listInclude,
@@ -99,10 +118,11 @@ export async function getPublicCategoryPageData(
   return {
     category,
     components: cards,
-    stats: {
-      approvedCount: cards.length,
-      premiumCount: cards.filter((component) => component.accessType === "PREMIUM").length,
-      featuredCount: cards.filter((component) => component.featured).length,
+    pagination: {
+      currentPage,
+      pageSize,
+      totalCount,
+      totalPages,
     },
   };
 }

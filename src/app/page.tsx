@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ArrowRight, Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles } from "lucide-react";
+import { Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCard } from "@/components/component-card";
-import { AppActionLink } from "@/components/ui/app-action-link";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
@@ -53,112 +52,54 @@ export default async function Home() {
 
         <div className="min-w-0 space-y-6">
           <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-              <div className="min-w-0">
-                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
-                  <span className="flex items-start gap-3">
-                    <span className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl border border-black/8 bg-white/90 text-foreground shadow-[0_12px_30px_-24px_rgba(22,18,12,0.55)] sm:size-11">
-                      <Library className="size-5 sm:size-6" />
-                    </span>
-                    <span>{messages.home.title}</span>
+            <div className="min-w-0">
+              <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
+                <span className="flex items-start gap-3">
+                  <span className="mt-1 flex size-10 shrink-0 items-center justify-center rounded-xl border border-black/8 bg-white/90 text-foreground shadow-[0_12px_30px_-24px_rgba(22,18,12,0.55)] sm:size-11">
+                    <Library className="size-5 sm:size-6" />
                   </span>
-                </h1>
-                <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                  {messages.home.description}
-                </p>
-
-                <div className="mt-6 sm:max-w-xl">
-                  <AppActionLink
-                    href={withLocalePath(locale, "/components")}
-                    uiSize="lg"
-                    icon={<ArrowRight className="size-4" />}
-                    iconPosition="right"
-                    className="w-full justify-center"
-                  >
-                    {messages.home.exploreComponents}
-                  </AppActionLink>
-                </div>
+                  <span>{messages.home.title}</span>
+                </span>
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
+                {messages.home.description}
+              </p>
             </div>
 
-              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="mt-5 border-t border-black/8 pt-5">
+              <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    <Bookmark className="size-6 text-muted-foreground" />
+                    {messages.home.topRatedEyebrow}
+                  </h2>
+                </div>
                 <Link
                   href={withLocalePath(locale, "/components")}
-                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
+                  className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
                 >
-                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Bookmark className="size-4 text-muted-foreground" />
-                    {messages.home.topRatedEyebrow}
-                  </p>
-                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                  <span className="flex items-center">
                     {messages.home.browseEveryComponent}
-                    <ArrowRight className="ml-1 size-3.5" />
-                  </span>
-                </Link>
-
-                <Link
-                  href={withLocalePath(locale, "/components?access=premium")}
-                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
-                >
-                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Crown className="size-4 text-muted-foreground" />
-                    {messages.home.premiumEyebrow}
-                  </p>
-                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                    {messages.home.browsePremium}
-                    <ArrowRight className="ml-1 size-3.5" />
-                  </span>
-                </Link>
-
-                <Link
-                  href={withLocalePath(locale, "/components?sort=newest")}
-                  className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
-                >
-                  <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Sparkles className="size-4 text-muted-foreground" />
-                    {messages.home.newestEyebrow}
-                  </p>
-                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-                    {messages.home.freshlyApproved}
-                    <ArrowRight className="ml-1 size-3.5" />
+                    <ChevronRight className="ml-1 size-4" />
                   </span>
                 </Link>
               </div>
-            </div>
-          </section>
-
-          <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-            <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                  <Bookmark className="size-8 text-muted-foreground" />
-                  {messages.home.topRatedEyebrow}
-                </h2>
+              <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                {homepage.topRated.map((component) => (
+                  <ComponentCard key={component.id} component={component} />
+                ))}
               </div>
-              <Link
-                href={withLocalePath(locale, "/components")}
-                className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
-              >
-                <span className="flex items-center">
-                  {messages.home.browseEveryComponent}
-                  <ChevronRight className="ml-1 size-4" />
-                </span>
-              </Link>
-            </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {homepage.topRated.map((component) => (
-                <ComponentCard key={component.id} component={component} />
-              ))}
             </div>
           </section>
 
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
             <div className="border-b border-black/6 pb-4">
-              <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                <Grid2X2 className="size-8 text-muted-foreground" />
+              <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                <Grid2X2 className="size-6 text-muted-foreground" />
                 {messages.home.categoryLeadersEyebrow}
               </h2>
             </div>
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {homepage.categoryHighlights.map((highlight) => {
                 if (!highlight.component) {
                   return null;
@@ -187,8 +128,8 @@ export default async function Home() {
             <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
               <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                  <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                    <Crown className="size-8 text-muted-foreground" />
+                  <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                    <Crown className="size-6 text-muted-foreground" />
                     {messages.home.premiumEyebrow}
                   </h2>
                 </div>
@@ -211,11 +152,22 @@ export default async function Home() {
           ) : null}
 
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-            <div className="border-b border-black/6 pb-4">
-              <h2 className="inline-flex items-center gap-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                <Sparkles className="size-8 text-muted-foreground" />
-                {messages.home.newestEyebrow}
-              </h2>
+            <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+                  <Sparkles className="size-6 text-muted-foreground" />
+                  {messages.home.newestEyebrow}
+                </h2>
+              </div>
+              <Link
+                href={withLocalePath(locale, "/components?sort=newest")}
+                className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
+              >
+                <span className="flex items-center">
+                  {messages.home.browseEveryComponent}
+                  <ChevronRight className="ml-1 size-4" />
+                </span>
+              </Link>
             </div>
             <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {homepage.newest.map((component) => (

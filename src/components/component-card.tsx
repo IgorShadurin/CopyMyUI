@@ -55,9 +55,9 @@ export async function ComponentCard({
         <Link
           href={withLocalePath(locale, `/components/${component.slug}`)}
           aria-label={component.title}
-          className="relative block aspect-[3/4] w-full overflow-hidden rounded-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="relative block aspect-[3/4] w-full overflow-hidden rounded-[12px] border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           style={{
-            boxShadow: "inset 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.07)",
+            boxShadow: "0 1px 3px rgba(0, 0, 0, 0.07)",
           }}
         >
           {component.previewImage ? (

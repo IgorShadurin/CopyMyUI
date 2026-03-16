@@ -159,113 +159,114 @@ export default async function ComponentsPage({
           categoryLinkMode="filters"
         />
 
-        <div className="min-w-0 space-y-6">
-          <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
-            <div className="rounded-[1.4rem] border border-black/8 bg-[rgba(252,251,247,0.98)] p-4 sm:p-5">
-              <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
-                  {messages.explorePage.eyebrow}
-                </p>
-                <h1 className="mt-3 inline-flex items-center gap-2 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
-                  <PanelTop className="size-6 text-muted-foreground sm:size-7" />
-                  {messages.explorePage.title}
-                </h1>
-                <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                  {messages.explorePage.description}
-                </p>
+        <div className="min-w-0">
+          <section className="rounded-[1.8rem] border border-black/6 bg-white/90 p-4 shadow-[0_24px_70px_-52px_rgba(22,18,12,0.38)] backdrop-blur sm:rounded-[2rem] sm:p-5">
+            <div className="max-w-3xl">
+              <h1 className="inline-flex items-center gap-2.5 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
+                <PanelTop className="size-6 text-muted-foreground sm:size-7" />
+                {messages.explorePage.title}
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+                {messages.explorePage.description}
+              </p>
+            </div>
+
+            <div className="mt-4 space-y-3 border-t border-black/6 pt-4">
+              <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 [&::-webkit-scrollbar]:hidden">
+                <Link
+                  href={premiumFilterHref}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "shrink-0 rounded-full",
+                    currentAccess === "premium"
+                      ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground"
+                      : ""
+                  )}
+                >
+                  <Crown className="size-4" />
+                  {messages.detailPage.premiumBadge}
+                </Link>
+                <Link
+                  href={topSortHref}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "shrink-0 rounded-full",
+                    currentSort === "top"
+                      ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground"
+                      : ""
+                  )}
+                >
+                  <ArrowUpDown className="size-4" />
+                  {messages.explorePage.topRated}
+                </Link>
+                <Link
+                  href={newestSortHref}
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "sm" }),
+                    "shrink-0 rounded-full",
+                    currentSort === "newest"
+                      ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground"
+                      : ""
+                  )}
+                >
+                  <ArrowUpDown className="size-4" />
+                  {messages.explorePage.newest}
+                </Link>
               </div>
 
-              <div className="mt-4 space-y-3 border-t border-black/8 pt-4">
-                <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 [&::-webkit-scrollbar]:hidden">
+              {hasFilters ? (
+                <div className="flex flex-wrap gap-2">
+                  {normalizedQuery ? (
+                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      {normalizedQuery}
+                    </span>
+                  ) : null}
+                  {activeCategory ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      <CategoryIcon slug={activeCategory.slug} className="size-4" />
+                      {translateCategory(activeCategory, messages, locale).name}
+                    </span>
+                  ) : null}
+                  {params.access === "premium" ? (
+                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      {messages.explorePage.premiumOnly}
+                    </span>
+                  ) : null}
+                  {params.access === "free" ? (
+                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      {messages.explorePage.freeOnly}
+                    </span>
+                  ) : null}
+                  {params.sort === "newest" ? (
+                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      {messages.explorePage.newest}
+                    </span>
+                  ) : null}
                   <Link
-                    href={premiumFilterHref}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "sm" }),
-                      "shrink-0 rounded-full",
-                      currentAccess === "premium" ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground" : ""
-                    )}
+                    href={withLocalePath(locale, "/components")}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[rgba(252,251,247,0.96)]"
                   >
-                    <Crown className="size-4" />
-                    {messages.detailPage.premiumBadge}
-                  </Link>
-                  <Link
-                    href={topSortHref}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "sm" }),
-                      "shrink-0 rounded-full",
-                      currentSort === "top" ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground" : ""
-                    )}
-                  >
-                    <ArrowUpDown className="size-4" />
-                    {messages.explorePage.topRated}
-                  </Link>
-                  <Link
-                    href={newestSortHref}
-                    className={cn(
-                      buttonVariants({ variant: "outline", size: "sm" }),
-                      "shrink-0 rounded-full",
-                      currentSort === "newest" ? "border-black/14 bg-[rgba(252,251,247,0.96)] text-foreground" : ""
-                    )}
-                  >
-                    <ArrowUpDown className="size-4" />
-                    {messages.explorePage.newest}
+                    <RotateCcw className="size-3.5" />
+                    {messages.explorePage.resetFilters}
                   </Link>
                 </div>
+              ) : null}
+            </div>
 
-                {hasFilters ? (
-                  <div className="flex flex-wrap gap-2">
-                    {normalizedQuery ? (
-                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
-                        {normalizedQuery}
-                      </span>
-                    ) : null}
-                    {activeCategory ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
-                        <CategoryIcon slug={activeCategory.slug} className="size-4" />
-                        {translateCategory(activeCategory, messages, locale).name}
-                      </span>
-                    ) : null}
-                    {params.access === "premium" ? (
-                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
-                        {messages.explorePage.premiumOnly}
-                      </span>
-                    ) : null}
-                    {params.access === "free" ? (
-                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
-                        {messages.explorePage.freeOnly}
-                      </span>
-                    ) : null}
-                    {params.sort === "newest" ? (
-                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
-                        {messages.explorePage.newest}
-                      </span>
-                    ) : null}
-                    <Link
-                      href={withLocalePath(locale, "/components")}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[rgba(252,251,247,0.96)]"
-                    >
-                      <RotateCcw className="size-3.5" />
-                      {messages.explorePage.resetFilters}
-                    </Link>
-                  </div>
-                ) : null}
-              </div>
+            <div className="mt-4 border-t border-black/6 pt-4">
+              {components.length > 0 ? (
+                <ComponentCardList components={components} />
+              ) : (
+                <EmptyState
+                  eyebrow={messages.explorePage.emptyEyebrow}
+                  title={messages.explorePage.emptyTitle}
+                  description={messages.explorePage.emptyDescription}
+                  actionHref={withLocalePath(locale, "/components")}
+                  actionLabel={messages.explorePage.resetFilters}
+                />
+              )}
             </div>
           </section>
-
-          {components.length > 0 ? (
-            <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-              <ComponentCardList components={components} />
-            </section>
-          ) : (
-            <EmptyState
-              eyebrow={messages.explorePage.emptyEyebrow}
-              title={messages.explorePage.emptyTitle}
-              description={messages.explorePage.emptyDescription}
-              actionHref={withLocalePath(locale, "/components")}
-              actionLabel={messages.explorePage.resetFilters}
-            />
-          )}
         </div>
       </div>
     </main>
