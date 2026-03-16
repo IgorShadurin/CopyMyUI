@@ -13,6 +13,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import type { AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
@@ -32,7 +33,7 @@ function parsePageParam(pageValue: string | undefined) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
-function buildCategoryPageHref(locale: string, slug: string, page: number) {
+function buildCategoryPageHref(locale: AppLocale, slug: string, page: number) {
   if (page <= 1) {
     return withLocalePath(locale, `/categories/${slug}`);
   }
