@@ -223,13 +223,15 @@ function getPreviewImageUrl(
 const LOCKED_SOURCE_PREVIEW_PERCENT = 0.08;
 const LOCKED_SOURCE_PREVIEW_MIN_LINES = 8;
 const LOCKED_SOURCE_PREVIEW_MAX_LINES = 80;
+const LOCKED_SOURCE_PREVIEW_NOTICE =
+  "// Preview only. Buy this component to unlock the full SwiftUI source.";
 
 function getLockedSourcePreview(swiftCode: string) {
   const normalized = swiftCode.replace(/\r\n/g, "\n").trimEnd();
   const lines = normalized.split("\n");
 
   if (!lines.length) {
-    return "";
+    return LOCKED_SOURCE_PREVIEW_NOTICE;
   }
 
   const percentLines = Math.ceil(lines.length * LOCKED_SOURCE_PREVIEW_PERCENT);
@@ -237,12 +239,13 @@ function getLockedSourcePreview(swiftCode: string) {
     LOCKED_SOURCE_PREVIEW_MAX_LINES,
     Math.max(LOCKED_SOURCE_PREVIEW_MIN_LINES, percentLines)
   );
+  const maxVisibleLines = lines.length > 1 ? lines.length - 1 : 1;
+  const visibleLineCount = Math.min(previewLineCount, maxVisibleLines);
+  const previewBody = lines.slice(0, visibleLineCount).join("\n").trimEnd();
 
-  if (lines.length <= previewLineCount) {
-    return normalized;
-  }
-
-  return lines.slice(0, previewLineCount).join("\n").trimEnd();
+  return previewBody
+    ? `${LOCKED_SOURCE_PREVIEW_NOTICE}\n\n${previewBody}`
+    : LOCKED_SOURCE_PREVIEW_NOTICE;
 }
 
 async function assertCategorySelectionExists(
@@ -674,10 +677,13 @@ export async function listPublicComponents(
   );
 }
 
-export async function getPublicComponentBySlug(slug: string, viewer: Viewer | null) {
+async function getPublicComponent(
+  where: Prisma.ComponentWhereUniqueInput,
+  viewer: Viewer | null
+) {
   const platformConfig = await getPlatformConfig();
   const component = await prisma.component.findUnique({
-    where: { slug },
+    where,
     include: detailInclude,
   });
 
@@ -767,6 +773,14 @@ export async function getPublicComponentBySlug(slug: string, viewer: Viewer | nu
       viewer?.id === component.ownerId &&
       component.activeRevision?.status !== ComponentStatus.PENDING_REVIEW,
   };
+}
+
+export async function getPublicComponentBySlug(slug: string, viewer: Viewer | null) {
+  return getPublicComponent({ slug }, viewer);
+}
+
+export async function getPublicComponentById(componentId: string, viewer: Viewer | null) {
+  return getPublicComponent({ id: componentId }, viewer);
 }
 
 export async function getDashboardData(ownerId: string) {

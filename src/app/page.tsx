@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles } from "lucide-react";
+import { Bookmark, ChevronRight, Grid2X2, Library, Sparkles } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCard } from "@/components/component-card";
@@ -123,33 +123,6 @@ export default async function Home() {
               })}
             </div>
           </section>
-
-          {homepage.premium.length > 0 ? (
-            <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-              <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h2 className="inline-flex items-center gap-2 text-2xl font-semibold tracking-tight sm:text-3xl">
-                    <Crown className="size-6 text-muted-foreground" />
-                    {messages.home.premiumEyebrow}
-                  </h2>
-                </div>
-                <Link
-                  href={withLocalePath(locale, "/components?access=premium")}
-                  className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
-                >
-                  <span className="flex items-center">
-                    {messages.home.browseEveryComponent}
-                    <ChevronRight className="ml-1 size-4" />
-                  </span>
-                </Link>
-              </div>
-              <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                {homepage.premium.map((component) => (
-                  <ComponentCard key={component.id} component={component} />
-                ))}
-              </div>
-            </section>
-          ) : null}
 
           <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
             <div className="flex flex-col gap-3 border-b border-black/6 pb-4 md:flex-row md:items-end md:justify-between">

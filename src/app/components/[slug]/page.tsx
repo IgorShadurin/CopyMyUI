@@ -7,6 +7,7 @@ import { Code2, Crown, Layers3, Lock, LogIn, PanelTop } from "lucide-react";
 import { CodeCopyButton } from "@/components/code-copy-button";
 import { CodePreview } from "@/components/code-preview";
 import { ComponentMediaGallery } from "@/components/component-media-gallery";
+import { FavoriteButton } from "@/components/favorite-button";
 import { GoogleSignInModalButton } from "@/components/google-signin-modal-button";
 import { PageNotice } from "@/components/page-notice";
 import { StatusBadge } from "@/components/status-badge";
@@ -180,16 +181,17 @@ export default async function ComponentDetailPage({
       ) : null}
 
       <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr] xl:items-start">
-        <Card className="order-3 rounded-[1.8rem] border border-black/6 bg-[#121010] py-0 text-white shadow-[0_35px_90px_-45px_rgba(21,16,10,0.7)] sm:rounded-[2rem] xl:order-1 xl:self-start">
+        <Card
+          id="component-detail-source-card"
+          data-source-theme="dark"
+          className="component-source-card order-3 rounded-[1.8rem] border py-0 sm:rounded-[2rem] xl:order-1 xl:self-start"
+        >
           <CardContent className="flex flex-col gap-5 px-5 pt-5 pb-0 sm:px-6 sm:pt-6 sm:pb-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/50">
-                  {messages.detailPage.swiftSourceEyebrow}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <Code2 className="size-5 text-white/70 sm:size-6" />
-                  <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                <div className="flex items-center gap-2">
+                  <Code2 className="source-card-icon size-5 sm:size-6" />
+                  <h2 className="source-card-title text-2xl font-semibold tracking-tight sm:text-3xl">
                     {messages.detailPage.swiftSourceTitle}
                   </h2>
                 </div>
@@ -207,6 +209,7 @@ export default async function ComponentDetailPage({
                 code={component.swiftCode}
                 className="xl:min-h-0 xl:flex-1"
                 desktopAlignBottomToId="component-detail-right-column"
+                containerThemeTargetId="component-detail-source-card"
               />
             ) : (
               <div className="mb-5 rounded-[1.6rem] border border-white/10 bg-white/5 px-4 pt-4 pb-6 sm:mb-6 sm:px-5 sm:pt-5 sm:pb-7 xl:flex-1">
@@ -322,32 +325,43 @@ export default async function ComponentDetailPage({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                   {messages.common.creator}
                 </p>
-                <div className="mt-2 flex items-center gap-2.5">
-                  <Avatar
-                    size="sm"
-                    className="size-8 rounded-[30%] shadow-[0_0.5px_1px_rgba(0,0,0,0.22),inset_0_-3px_4px_rgba(0,0,0,0.02)] after:border-black/10"
-                  >
-                    <AvatarImage
-                      src={component.owner.image ?? undefined}
-                      alt={component.owner.name ?? messages.profilePage.defaultName}
-                      className="rounded-[30%]"
-                    />
-                    <AvatarFallback className="rounded-[30%] text-xs">
-                      {initials(component.owner.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {component.owner.profileSlug ? (
-                    <Link
-                      href={withLocalePath(locale, `/creators/${component.owner.profileSlug}`)}
-                      className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Avatar
+                      size="sm"
+                      className="size-8 rounded-[30%] shadow-[0_0.5px_1px_rgba(0,0,0,0.22),inset_0_-3px_4px_rgba(0,0,0,0.02)] after:border-black/10"
                     >
-                      {component.owner.name ?? messages.profilePage.defaultName}
-                    </Link>
-                  ) : (
-                    <p className="text-sm font-medium text-foreground">
-                      {component.owner.name ?? messages.profilePage.defaultName}
-                    </p>
-                  )}
+                      <AvatarImage
+                        src={component.owner.image ?? undefined}
+                        alt={component.owner.name ?? messages.profilePage.defaultName}
+                        className="rounded-[30%]"
+                      />
+                      <AvatarFallback className="rounded-[30%] text-xs">
+                        {initials(component.owner.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {component.owner.profileSlug ? (
+                      <Link
+                        href={withLocalePath(locale, `/creators/${component.owner.profileSlug}`)}
+                        className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+                      >
+                        {component.owner.name ?? messages.profilePage.defaultName}
+                      </Link>
+                    ) : (
+                      <p className="text-sm font-medium text-foreground">
+                        {component.owner.name ?? messages.profilePage.defaultName}
+                      </p>
+                    )}
+                  </div>
+                  {!component.isPrivateView ? (
+                    <FavoriteButton
+                      componentId={component.id}
+                      initialIsFavorite={component.isFavorite}
+                      initialFavoritesCount={component.favoritesCount}
+                      appearance="minimal"
+                      showCount
+                    />
+                  ) : null}
                 </div>
               </div>
             </CardContent>

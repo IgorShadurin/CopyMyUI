@@ -8,7 +8,6 @@ import {
   LayoutTemplate,
   LogOut,
   Menu,
-  Plus,
   Settings,
   ShieldCheck,
   ShoppingBag,
@@ -136,13 +135,6 @@ export function SiteHeader({
                   </div>
 
                   <div className="grid gap-1 rounded-[1rem] border border-black/6 bg-white/90 p-1.5">
-                    <DropdownMenuItem
-                      render={<Link href={withLocalePath(locale, "/dashboard/components/new")} />}
-                      className="justify-start rounded-[0.8rem] px-3 py-2.5"
-                    >
-                      <Plus className="size-4" />
-                      {messages.header.newComponent}
-                    </DropdownMenuItem>
                     <DropdownMenuItem
                       render={<Link href={withLocalePath(locale, "/dashboard")} />}
                       className="justify-start rounded-[0.8rem] px-3 py-2.5"

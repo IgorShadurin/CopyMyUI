@@ -8,6 +8,7 @@ import { SourceThemeToggle } from "@/components/source-theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   getInitialSourceTheme,
+  readStoredSourceTheme,
   storeSourceTheme,
   type SourceTheme,
 } from "@/lib/source-theme";
@@ -19,14 +20,17 @@ export function CodePreview({
   code,
   className,
   desktopAlignBottomToId,
+  containerThemeTargetId,
 }: {
   code: string;
   className?: string;
   desktopAlignBottomToId?: string;
+  containerThemeTargetId?: string;
 }) {
   const { messages } = useI18n();
   const rootRef = useRef<HTMLDivElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
+  const hasRestoredThemeRef = useRef(false);
   const [expanded, setExpanded] = useState(false);
   const [sourceTheme, setSourceTheme] = useState<SourceTheme>(getInitialSourceTheme);
   const lineCount = code.split(/\r?\n/).length;
@@ -34,8 +38,34 @@ export function CodePreview({
   const [desktopCollapsedHeight, setDesktopCollapsedHeight] = useState<number | null>(null);
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      hasRestoredThemeRef.current = true;
+      setSourceTheme(readStoredSourceTheme());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredThemeRef.current) {
+      return;
+    }
+
     storeSourceTheme(sourceTheme);
   }, [sourceTheme]);
+
+  useEffect(() => {
+    if (!containerThemeTargetId) {
+      return;
+    }
+
+    const container = document.getElementById(containerThemeTargetId);
+    if (!container) {
+      return;
+    }
+
+    container.setAttribute("data-source-theme", sourceTheme);
+  }, [containerThemeTargetId, sourceTheme]);
 
   useEffect(() => {
     let frame = 0;

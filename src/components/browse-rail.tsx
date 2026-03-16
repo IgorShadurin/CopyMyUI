@@ -101,7 +101,7 @@ function BrowseRailContent({
         {!showAdvancedFilters && currentSort === "newest" ? (
           <input type="hidden" name="sort" value="newest" />
         ) : null}
-        <label className="flex items-center gap-3 rounded-[1rem] border border-black/8 bg-white px-3 py-3 shadow-sm">
+        <label className="flex h-11 items-center gap-3 rounded-full border border-black/8 bg-white px-4 shadow-sm">
           <Search className="size-4 text-muted-foreground" />
           <input
             type="search"

@@ -55,7 +55,7 @@ export const componentDraftSchema = z.object({
   changelog: z.string().trim().max(400).optional(),
   accessType: z.nativeEnum(ComponentAccessType),
   sellerTargetPriceCents: z.number().int().positive().nullable(),
-  swiftCode: z.string().trim().min(80).max(20000),
+  swiftCode: z.string().trim().min(80).max(100000),
   screenshots: z.array(screenshotPayloadSchema).min(MIN_SCREENSHOTS).max(MAX_SCREENSHOTS),
 }).superRefine((value, ctx) => {
   const categorySelection = categorySelectionSchema.safeParse({

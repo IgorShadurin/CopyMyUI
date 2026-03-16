@@ -195,10 +195,7 @@ export default async function DashboardPage({
               </div>
 
               <div className="mt-4 rounded-[1.2rem] border border-black/6 bg-[rgba(252,251,247,0.94)] p-5 text-center sm:p-6">
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-                  {messages.dashboardPage.emptyEyebrow}
-                </p>
-                <h2 className="mt-3 text-2xl font-medium leading-tight text-foreground sm:text-[2rem]">
+                <h2 className="text-xl font-medium leading-snug text-foreground/85 sm:text-2xl">
                   {messages.dashboardPage.emptyTitle}
                 </h2>
                 <p className="mx-auto mt-2 max-w-2xl text-sm leading-7 text-muted-foreground">

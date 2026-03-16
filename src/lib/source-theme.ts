@@ -1,17 +1,22 @@
 export type SourceTheme = "dark" | "light";
 
 export const SOURCE_THEME_STORAGE_KEY = "copymyui.source-editor-theme";
+export const DEFAULT_SOURCE_THEME: SourceTheme = "dark";
 
 export function getInitialSourceTheme(): SourceTheme {
+  return DEFAULT_SOURCE_THEME;
+}
+
+export function readStoredSourceTheme(): SourceTheme {
   if (typeof window === "undefined") {
-    return "dark";
+    return DEFAULT_SOURCE_THEME;
   }
 
   try {
     const storedTheme = window.localStorage.getItem(SOURCE_THEME_STORAGE_KEY);
-    return storedTheme === "light" ? "light" : "dark";
+    return storedTheme === "light" ? "light" : DEFAULT_SOURCE_THEME;
   } catch {
-    return "dark";
+    return DEFAULT_SOURCE_THEME;
   }
 }
 

@@ -61,6 +61,11 @@ const categories = [
     description: "Galleries, players, carousels, and motion-heavy canvases.",
     accent: "from-yellow-300 via-orange-200 to-neutral-100",
   },
+  {
+    name: "Gaming",
+    description: "HUDs, inventories, quest flows, and gameplay overlays.",
+    accent: "from-indigo-300 via-violet-200 to-sky-100",
+  },
 ] as const;
 
 type CategoryName = (typeof categories)[number]["name"];
@@ -405,6 +410,42 @@ const sampleComponents: SeedComponent[] = [
     seed: 24,
     pattern: "videoSpotlight",
   },
+  {
+    slug: "quest-loadout-rack",
+    title: "Quest Loadout Rack",
+    summary: "A loadout shelf with weapon cards, quick swap controls, and inventory stat highlights.",
+    description:
+      "Quest Loadout Rack is built for RPG and action interfaces where players need to compare equipment quickly and adjust kits without losing context.",
+    changelog: "Added rarity accents and compact swap-action affordances.",
+    categoryName: "Gaming",
+    featured: false,
+    seed: 26,
+    pattern: "audioShelf",
+  },
+  {
+    slug: "arena-match-queue",
+    title: "Arena Match Queue",
+    summary: "A match queue list with team status, role chips, and ready-check emphasis.",
+    description:
+      "Arena Match Queue packages pre-game lobby states into a clear vertical flow, making queue progress and readiness easy to scan on mobile.",
+    changelog: "Introduced role badges and stronger ready-state contrast.",
+    categoryName: "Gaming",
+    featured: false,
+    seed: 27,
+    pattern: "episodeQueue",
+  },
+  {
+    slug: "boss-raid-spotlight",
+    title: "Boss Raid Spotlight",
+    summary: "A raid spotlight module with encounter preview, phase markers, and party action prompts.",
+    description:
+      "Boss Raid Spotlight focuses attention on upcoming encounters while keeping phase guidance and squad shortcuts visible in a compact game-ready layout.",
+    changelog: "Added phase markers and condensed squad action cards.",
+    categoryName: "Gaming",
+    featured: false,
+    seed: 28,
+    pattern: "videoSpotlight",
+  },
 ] as const;
 
 const relatedCategoryNamesBySlug = new Map<string, CategoryName[]>([
@@ -467,6 +508,7 @@ const accentHexByCategory = new Map<CategoryName, string>([
   ["Social", "#EC4899"],
   ["Forms", "#8B5CF6"],
   ["Media", "#EAB308"],
+  ["Gaming", "#6366F1"],
 ]);
 
 const swiftAccentByCategory = new Map<CategoryName, string>([
@@ -477,6 +519,7 @@ const swiftAccentByCategory = new Map<CategoryName, string>([
   ["Social", "Color.pink"],
   ["Forms", "Color.purple"],
   ["Media", "Color.yellow"],
+  ["Gaming", "Color.indigo"],
 ]);
 
 function swiftStructName(title: string) {
@@ -1940,6 +1983,8 @@ function swiftCodeSnippet(component: Pick<SeedComponent, "title" | "pattern" | "
     case "Forms":
       return formsSnippet(component);
     case "Media":
+      return mediaSnippet(component);
+    case "Gaming":
       return mediaSnippet(component);
   }
 }

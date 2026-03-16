@@ -107,6 +107,43 @@
     font-family: var(--font-display);
   }
 
+  .component-source-card {
+    border-color: color-mix(in srgb, oklch(0.91 0.012 70) 40%, black);
+    background: #121010;
+    color: white;
+    box-shadow: 0 35px 90px -45px rgba(21, 16, 10, 0.7);
+    transition:
+      background-color 180ms ease,
+      color 180ms ease,
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .component-source-card .source-card-icon {
+    color: rgba(255, 255, 255, 0.72);
+    transition: color 180ms ease;
+  }
+
+  .component-source-card .source-card-title {
+    color: white;
+    transition: color 180ms ease;
+  }
+
+  .component-source-card[data-source-theme="light"] {
+    border-color: color-mix(in srgb, oklch(0.91 0.012 70) 75%, black);
+    background: color-mix(in srgb, white 90%, transparent);
+    color: oklch(0.24 0.018 35);
+    box-shadow: 0 35px 90px -45px rgba(21, 16, 10, 0.5);
+  }
+
+  .component-source-card[data-source-theme="light"] .source-card-icon {
+    color: oklch(0.56 0.02 35);
+  }
+
+  .component-source-card[data-source-theme="light"] .source-card-title {
+    color: oklch(0.24 0.018 35);
+  }
+
   .code-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.28) transparent;

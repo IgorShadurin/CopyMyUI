@@ -1,7 +1,7 @@
 "use client";
 
 import { ComponentAccessType } from "@prisma/client";
-import { useActionState, useEffect, useState, type FormEvent } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -33,6 +33,7 @@ import { CategoryIcon } from "@/lib/category-icons";
 import { MAX_SCREENSHOTS, MIN_SCREENSHOTS } from "@/lib/constants";
 import {
   getInitialSourceTheme,
+  readStoredSourceTheme,
   storeSourceTheme,
   type SourceTheme,
 } from "@/lib/source-theme";
@@ -98,6 +99,7 @@ export function ComponentEditorForm({
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(
     initialSelectedCategoryIds
   );
+  const hasRestoredSourceThemeRef = useRef(false);
   const [sourceEditorTheme, setSourceEditorTheme] =
     useState<SourceTheme>(getInitialSourceTheme);
   const [titleValue, setTitleValue] = useState(defaults.title);
@@ -118,6 +120,19 @@ export function ComponentEditorForm({
   }, [router, state.redirectTo]);
 
   useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      hasRestoredSourceThemeRef.current = true;
+      setSourceEditorTheme(readStoredSourceTheme());
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!hasRestoredSourceThemeRef.current) {
+      return;
+    }
+
     storeSourceTheme(sourceEditorTheme);
   }, [sourceEditorTheme]);
 
@@ -183,7 +198,7 @@ export function ComponentEditorForm({
 
   function validateSwiftCode(value: string) {
     const trimmedLength = value.trim().length;
-    return trimmedLength >= 80 && trimmedLength <= 20000
+    return trimmedLength >= 80 && trimmedLength <= 100000
       ? null
       : messages.errors.validation.swiftCode;
   }
@@ -297,19 +312,18 @@ export function ComponentEditorForm({
   }
 
   return (
-    <form action={formAction} onSubmit={handleSubmit} noValidate className="space-y-8">
-      <div>
-        <Card className="rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_35px_90px_-45px_rgba(21,16,10,0.5)] sm:rounded-[2rem]">
-          <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
-            <CardTitle className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
-              <Component className="size-5 text-muted-foreground" />
-              {messages.editor.title}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {messages.editor.description}
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6 px-5 pb-5 sm:px-6 sm:pb-6">
+    <form action={formAction} onSubmit={handleSubmit} noValidate>
+      <Card className="rounded-[1.8rem] border border-black/6 bg-white/90 shadow-[0_35px_90px_-45px_rgba(21,16,10,0.5)] sm:rounded-[2rem]">
+        <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
+          <CardTitle className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+            <Component className="size-5 text-muted-foreground" />
+            {messages.editor.title}
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            {messages.editor.description}
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6 px-5 pb-5 sm:px-6 sm:pb-6">
             <div className="space-y-3">
               <Label htmlFor="title">{messages.editor.componentTitle}</Label>
               <Input
@@ -530,16 +544,10 @@ export function ComponentEditorForm({
                 </p>
               ) : null}
             </div>
-            <input type="hidden" name="accessType" value={defaults.accessType} />
-            <input
-              type="hidden"
-              name="sellerTargetPriceUsd"
-              value={defaults.sellerTargetPriceUsd}
-            />
             <div className="mt-8 border-t border-black/8 pt-6">
               <CardTitle className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
-              <ImageIcon className="size-5 text-muted-foreground" />
-              {messages.editor.screenshotsTitle}
+                <ImageIcon className="size-5 text-muted-foreground" />
+                {messages.editor.screenshotsTitle}
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 {messages.editor.screenshotsDescription}
@@ -557,112 +565,106 @@ export function ComponentEditorForm({
                 </p>
               ) : null}
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card
-        className={cn(
-          "rounded-[1.8rem] border shadow-[0_35px_90px_-45px_rgba(21,16,10,0.65)] sm:rounded-[2rem]",
-          sourceEditorTheme === "dark"
-            ? "border-black/6 bg-[#121010] text-white"
-            : "border-black/6 bg-white text-foreground"
-        )}
-      >
-        <CardHeader className="px-5 pt-5 sm:px-6 sm:pt-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle
-                className={cn(
-                  "inline-flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl",
-                  sourceEditorTheme === "dark" ? "text-white" : "text-foreground"
-                )}
-              >
-                <Code2
-                  className={cn(
-                    "size-5",
-                    sourceEditorTheme === "dark" ? "text-white/70" : "text-muted-foreground"
-                  )}
-                />
-                {messages.editor.sourceTitle}
-              </CardTitle>
-              <p
-                className={cn(
-                  "mt-1 text-sm",
-                  sourceEditorTheme === "dark" ? "text-white/65" : "text-muted-foreground"
-                )}
-              >
-                {messages.editor.sourceDescription}
-              </p>
-            </div>
-
-            <SourceThemeToggle
-              value={sourceEditorTheme}
-              onChange={setSourceEditorTheme}
-              surface={sourceEditorTheme}
+            <input type="hidden" name="accessType" value={defaults.accessType} />
+            <input
+              type="hidden"
+              name="sellerTargetPriceUsd"
+              value={defaults.sellerTargetPriceUsd}
             />
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 px-5 pb-5 sm:px-6 sm:pb-6">
-          <Textarea
-            id="swiftCode"
-            name="swiftCode"
-            defaultValue={defaults.swiftCode}
-            placeholder={SWIFT_SOURCE_PLACEHOLDER}
-            minLength={80}
-            maxLength={20000}
-            required
-            aria-invalid={Boolean(fieldErrors.swiftCode)}
-            aria-describedby={fieldErrors.swiftCode ? "editor-swift-code-error" : undefined}
-            onBlur={(event) => {
-              markFieldTouched("swiftCode");
-              updateFieldError("swiftCode", validateSwiftCode(event.currentTarget.value));
-            }}
-            onChange={(event) => {
-              setSwiftCodeValue(event.currentTarget.value);
-              if (touchedFields.swiftCode) {
-                updateFieldError("swiftCode", validateSwiftCode(event.currentTarget.value));
-              }
-            }}
-            className={cn(
-              "min-h-[24rem] rounded-[1.8rem] font-mono text-[12px] leading-6 sm:min-h-[34rem] sm:text-[13px]",
-              sourceEditorTheme === "dark"
-                ? "border border-white/10 bg-white/5 text-white"
-                : "border border-black/10 bg-white text-foreground",
-              fieldErrors.swiftCode ? "border-rose-300 focus-visible:ring-rose-200" : undefined
-            )}
-          />
-          {fieldErrors.swiftCode ? (
-            <p id="editor-swift-code-error" className="text-sm text-rose-500">
-              {fieldErrors.swiftCode}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-3">
-            <SubmitButton
-              intent="draft"
-              pendingLabel={messages.editor.saveDraftPending}
-              icon={<Save className="size-4" />}
-              variant="outline"
-              disabled={!isFormValid}
-            >
-              {messages.editor.saveDraft}
-            </SubmitButton>
-            <SubmitButton
-              intent="submit"
-              pendingLabel={messages.editor.submitPending}
-              icon={<SendHorizontal className="size-4" />}
-              variant="default"
-              disabled={!isFormValid}
-            >
-              {messages.editor.submitForReview}
-            </SubmitButton>
-          </div>
-          {state.error ? (
-            <Alert className="rounded-[1.5rem] border-rose-300 bg-rose-50 px-4 py-3.5 text-base text-rose-700 sm:py-4">
-              <AlertCircle className="size-4" />
-              <div>{state.error}</div>
-            </Alert>
-          ) : null}
+            <div className="mt-8">
+              <hr className="border-black/8" />
+              <div className="pt-6">
+                <CardTitle className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight sm:text-2xl">
+                  <Code2 className="size-5 text-muted-foreground" />
+                  {messages.editor.sourceTitle}
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {messages.editor.sourceDescription}
+                </p>
+
+                <div
+                  className={cn(
+                    "mt-4 rounded-[1.6rem] border p-4 shadow-[0_24px_56px_-42px_rgba(21,16,10,0.55)] sm:p-5",
+                    sourceEditorTheme === "dark"
+                      ? "border-black/6 bg-[#121010] text-white"
+                      : "border-black/10 bg-[rgba(252,251,247,0.96)] text-foreground"
+                  )}
+                >
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <div />
+                    <SourceThemeToggle
+                      value={sourceEditorTheme}
+                      onChange={setSourceEditorTheme}
+                      surface={sourceEditorTheme}
+                    />
+                  </div>
+
+                  <Textarea
+                    id="swiftCode"
+                    name="swiftCode"
+                    defaultValue={defaults.swiftCode}
+                    placeholder={SWIFT_SOURCE_PLACEHOLDER}
+                    minLength={80}
+                    maxLength={100000}
+                    required
+                    aria-invalid={Boolean(fieldErrors.swiftCode)}
+                    aria-describedby={fieldErrors.swiftCode ? "editor-swift-code-error" : undefined}
+                    onBlur={(event) => {
+                      markFieldTouched("swiftCode");
+                      updateFieldError("swiftCode", validateSwiftCode(event.currentTarget.value));
+                    }}
+                    onChange={(event) => {
+                      setSwiftCodeValue(event.currentTarget.value);
+                      if (touchedFields.swiftCode) {
+                        updateFieldError("swiftCode", validateSwiftCode(event.currentTarget.value));
+                      }
+                    }}
+                    className={cn(
+                      "min-h-[24rem] rounded-[1.8rem] font-mono text-[12px] leading-6 sm:min-h-[34rem] sm:text-[13px]",
+                      sourceEditorTheme === "dark"
+                        ? "border border-white/10 bg-white/5 text-white"
+                        : "border border-black/10 bg-white text-foreground",
+                      fieldErrors.swiftCode
+                        ? "border-rose-300 focus-visible:ring-rose-200"
+                        : undefined
+                    )}
+                  />
+                  {fieldErrors.swiftCode ? (
+                    <p id="editor-swift-code-error" className="mt-3 text-sm text-rose-500">
+                      {fieldErrors.swiftCode}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <SubmitButton
+                    intent="draft"
+                    pendingLabel={messages.editor.saveDraftPending}
+                    icon={<Save className="size-4" />}
+                    variant="outline"
+                    disabled={!isFormValid}
+                  >
+                    {messages.editor.saveDraft}
+                  </SubmitButton>
+                  <SubmitButton
+                    intent="submit"
+                    pendingLabel={messages.editor.submitPending}
+                    icon={<SendHorizontal className="size-4" />}
+                    variant="default"
+                    disabled={!isFormValid}
+                  >
+                    {messages.editor.submitForReview}
+                  </SubmitButton>
+                </div>
+
+                {state.error ? (
+                  <Alert className="mt-4 rounded-[1.5rem] border-rose-300 bg-rose-50 px-4 py-3.5 text-base text-rose-700 sm:py-4">
+                    <AlertCircle className="size-4" />
+                    <div>{state.error}</div>
+                  </Alert>
+                ) : null}
+              </div>
+            </div>
         </CardContent>
       </Card>
     </form>

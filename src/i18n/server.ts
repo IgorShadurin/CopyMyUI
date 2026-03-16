@@ -60,18 +60,26 @@ export function translateCategory<
     translations?: Array<{ locale: string; name: string; description: string }>;
   },
 >(category: TCategory, messages: Messages, locale?: AppLocale) {
-  const databaseTranslation =
-    category.translations?.find((translation) => translation.locale === locale) ??
-    category.translations?.find((translation) => translation.locale === "en");
+  const databaseLocaleTranslation = category.translations?.find(
+    (translation) => translation.locale === locale
+  );
+  const databaseEnglishTranslation = category.translations?.find(
+    (translation) => translation.locale === "en"
+  );
   const translated = category.slug
     ? messages.categories[category.slug as keyof Messages["categories"]]
     : null;
 
   return {
-    name: databaseTranslation?.name ?? translated?.name ?? category.name,
+    name:
+      databaseLocaleTranslation?.name ??
+      translated?.name ??
+      databaseEnglishTranslation?.name ??
+      category.name,
     description:
-      databaseTranslation?.description ??
+      databaseLocaleTranslation?.description ??
       translated?.description ??
+      databaseEnglishTranslation?.description ??
       category.description,
   };
 }

@@ -41,7 +41,7 @@ const en = {
   },
   footer: {
     description:
-      "Find polished SwiftUI components, save favorites, and ship iOS screens faster with ready-to-use code.",
+      "Ship iOS screens faster with ready-to-use SwiftUI components and production-ready code, so you do not rebuild common screens from scratch.",
     exploreComponents: "Explore components",
     creatorDashboard: "Creator dashboard",
     xLabel: "X / Web3Igor",
@@ -87,6 +87,10 @@ const en = {
     media: {
       name: "Media",
       description: "Galleries, players, carousels, and motion-heavy canvases.",
+    },
+    gaming: {
+      name: "Gaming",
+      description: "HUDs, inventories, quest flows, and gameplay overlays.",
     },
   },
   home: {
@@ -150,7 +154,7 @@ const en = {
     buyNowLabel: "Buy now",
     signInToBuy: "Sign in to buy",
     revisionTrailEyebrow: "Latest approval",
-    revisionTrailTitle: "Last approved update",
+    revisionTrailTitle: "Last update",
     needMoreEyebrow: "Need more components?",
     needMoreTitle: "Explore the full public collection",
     needMoreDescription:
@@ -169,7 +173,7 @@ const en = {
     premiumBadge: "Premium",
     viewComponent: "View component",
     emptyEyebrow: "Start building",
-    emptyTitle: "You haven’t created a component yet",
+    emptyTitle: "No components yet",
     emptyDescription:
       "Draft your first SwiftUI component, upload screenshots, and decide when it is ready for moderation.",
     emptyAction: "Create your first component",
@@ -206,7 +210,7 @@ const en = {
     description:
       "Everything you have unlocked stays here so you can jump back into paid SwiftUI components at any time.",
     emptyEyebrow: "No purchases yet",
-    emptyTitle: "You haven’t bought any premium components",
+    emptyTitle: "No premium purchases yet",
     emptyDescription:
       "Explore the premium catalog, unlock the components you want, and they will stay available in this library.",
     emptyAction: "Browse premium components",
@@ -219,9 +223,9 @@ const en = {
     componentCount: "Approved components",
     premiumCount: "Premium components",
     freeSectionEyebrow: "Shared free components",
-    freeSectionTitle: "Approved free releases",
+    freeSectionTitle: "Releases",
     premiumSectionEyebrow: "Premium components",
-    premiumSectionTitle: "Approved premium releases",
+    premiumSectionTitle: "Premium",
   },
   categoryPage: {
     eyebrow: "Category collection",
@@ -334,7 +338,7 @@ const en = {
       "Use your Google account to create, favorite, and moderate components.",
     authNotConfigured:
       "Google auth credentials are not configured locally yet, so Google sign-in will stay unavailable until they are added.",
-    continueWithGoogle: "Continue with Google",
+    continueWithGoogle: "Sign in with Google",
     devShortcuts: "Development shortcuts",
     signInAs: "Sign in as {email}",
   },
@@ -418,9 +422,9 @@ const en = {
     copied: "SwiftUI code copied.",
     expand: "Show full code",
     collapse: "Collapse code",
-    authRequiredTitle: "Sign in to copy code",
+    authRequiredTitle: "Sign in to copy",
     authRequiredDescription:
-      "Continue with Google to copy the SwiftUI source and return to this component.",
+      "Continue with Google to copy the SwiftUI source and return to components.",
   },
   notFound: {
     eyebrow: "Not found",
@@ -443,7 +447,7 @@ const en = {
       description: "Description must be between 40 and 1400 characters.",
       changelog: "Changelog must be 400 characters or fewer.",
       sellerTargetPriceCents: "Set a valid premium payout price.",
-      swiftCode: "SwiftUI code must be between 80 and 20000 characters.",
+      swiftCode: "SwiftUI code must be between 80 and 100000 characters.",
       screenshots: "Add between 1 and 4 screenshots.",
     },
     service: {
@@ -520,8 +524,8 @@ const es: typeof en = {
   },
   footer: {
     description:
-      "Descubre componentes SwiftUI pulidos, guarda favoritos y crea pantallas iOS más rápido con código listo para usar.",
-    exploreComponents: "Explorar componentes",
+      "Crea pantallas iOS más rápido con componentes SwiftUI listos para usar y código listo para producción, para no reconstruir pantallas comunes desde cero.",
+    exploreComponents: "Componentes",
     creatorDashboard: "Panel del creador",
     xLabel: "X / Web3Igor",
   },
@@ -567,11 +571,15 @@ const es: typeof en = {
       name: "Medios",
       description: "Galerías, reproductores, carruseles y lienzos con mucho movimiento.",
     },
+    gaming: {
+      name: "Juegos",
+      description: "HUD, inventarios, flujos de misiones y superposiciones de juego.",
+    },
   },
   home: {
-    title: "Crea tu biblioteca de componentes SwiftUI.",
+    title: "Crea tu biblioteca SwiftUI.",
     description:
-      "CopyMyUI ayuda a los equipos iOS a lanzar más rápido con componentes SwiftUI listos para usar. Descubre patrones de UI probados, copia código listo para producción y guarda favoritos para no reconstruir pantallas comunes desde cero.",
+      "Publica más rápido con componentes SwiftUI listos para usar y código listo para producción, para no volver a crear pantallas comunes desde cero.",
     searchPlaceholder: "Buscar títulos, descripciones, creadores y dashboards...",
     exploreComponents: "Explorar componentes",
     topRatedNow: "Más guardados ahora",
@@ -593,7 +601,7 @@ const es: typeof en = {
     title: "Componentes SwiftUI públicos",
     description:
       "Busca envíos aprobados, salta entre categorías y guarda favoritos para más tarde.",
-    searchPlaceholder: "Buscar por título, resumen, descripción o creador",
+    searchPlaceholder: "Buscar por título o autor",
     allCategories: "Todas las categorías",
     allAccessTypes: "Todos los accesos",
     freeOnly: "Solo gratis",
@@ -629,7 +637,7 @@ const es: typeof en = {
     buyNowLabel: "Comprar ahora",
     signInToBuy: "Entrar para comprar",
     revisionTrailEyebrow: "Última aprobación",
-    revisionTrailTitle: "Última actualización aprobada",
+    revisionTrailTitle: "Última actualización",
     needMoreEyebrow: "¿Necesitas más componentes?",
     needMoreTitle: "Explora la colección pública completa",
     needMoreDescription:
@@ -648,7 +656,7 @@ const es: typeof en = {
     premiumBadge: "De pago",
     viewComponent: "Ver componente",
     emptyEyebrow: "Empieza a crear",
-    emptyTitle: "Aún no has creado ningún componente",
+    emptyTitle: "Sin componentes todavía",
     emptyDescription:
       "Redacta tu primer componente SwiftUI, sube capturas y decide cuándo está listo para moderación.",
     emptyAction: "Crear tu primer componente",
@@ -685,7 +693,7 @@ const es: typeof en = {
     description:
       "Todo lo que desbloquees queda aquí para que vuelvas a los componentes SwiftUI de pago cuando quieras.",
     emptyEyebrow: "Aún no hay compras",
-    emptyTitle: "No has comprado componentes premium",
+    emptyTitle: "Sin compras premium todavía",
     emptyDescription:
       "Explora el catálogo premium, desbloquea los componentes que quieras y seguirán disponibles en esta biblioteca.",
     emptyAction: "Explorar componentes premium",
@@ -698,7 +706,7 @@ const es: typeof en = {
     componentCount: "Componentes aprobados",
     premiumCount: "Componentes premium",
     freeSectionEyebrow: "Componentes gratuitos compartidos",
-    freeSectionTitle: "Lanzamientos gratuitos aprobados",
+    freeSectionTitle: "Lanzamientos",
     premiumSectionEyebrow: "Componentes premium",
     premiumSectionTitle: "Lanzamientos premium aprobados",
   },
@@ -815,7 +823,7 @@ const es: typeof en = {
       "Usa tu cuenta de Google para crear, guardar favoritos y moderar componentes.",
     authNotConfigured:
       "Las credenciales de Google aún no están configuradas localmente, así que el acceso con Google seguirá desactivado hasta que se añadan.",
-    continueWithGoogle: "Continuar con Google",
+    continueWithGoogle: "Iniciar sesión con Google",
     devShortcuts: "Accesos directos de desarrollo",
     signInAs: "Entrar como {email}",
   },
@@ -900,9 +908,9 @@ const es: typeof en = {
     copied: "Código SwiftUI copiado.",
     expand: "Ver código completo",
     collapse: "Ocultar código",
-    authRequiredTitle: "Inicia sesión para copiar el código",
+    authRequiredTitle: "Inicia sesión para copiar",
     authRequiredDescription:
-      "Continúa con Google para copiar el código SwiftUI y volver a este componente.",
+      "Continúa con Google para copiar el código SwiftUI y volver a los componentes.",
   },
   notFound: {
     eyebrow: "No encontrado",
@@ -925,7 +933,7 @@ const es: typeof en = {
       description: "La descripción debe tener entre 40 y 1400 caracteres.",
       changelog: "El registro de cambios debe tener 400 caracteres o menos.",
       sellerTargetPriceCents: "Define un precio válido para el pago premium.",
-      swiftCode: "El código SwiftUI debe tener entre 80 y 20000 caracteres.",
+      swiftCode: "El código SwiftUI debe tener entre 80 y 100000 caracteres.",
       screenshots: "Agrega entre 1 y 4 capturas.",
     },
     service: {
@@ -1002,8 +1010,8 @@ const ru: typeof en = {
   },
   footer: {
     description:
-      "Находите качественные SwiftUI-компоненты, сохраняйте избранное и быстрее собирайте iOS-экраны на готовом коде.",
-    exploreComponents: "Смотреть компоненты",
+      "Собирайте iOS-экраны быстрее с готовыми SwiftUI-компонентами и кодом, готовым к выпуску, чтобы не делать типовые экраны с нуля.",
+    exploreComponents: "Компоненты",
     creatorDashboard: "Панель автора",
     xLabel: "X / Web3Igor",
   },
@@ -1031,15 +1039,15 @@ const ru: typeof en = {
     },
     commerce: {
       name: "Коммерция",
-      description: "Сценарии ценообразования, карточки товаров, корзины и поверхности покупки.",
+      description: "Витрины товаров, карточки, корзина и оформление покупки.",
     },
     paywall: {
       name: "Пейволл",
-      description: "Экранные ограничения подписки, апгрейд-подсказки и монетизационные поверхности.",
+      description: "Экраны подписки, предложения апгрейда и элементы монетизации.",
     },
     social: {
       name: "Социальное",
-      description: "Профильные модули, социальные ленты и виджеты вовлечения.",
+      description: "Профили, социальные ленты и элементы взаимодействия.",
     },
     forms: {
       name: "Формы",
@@ -1047,19 +1055,23 @@ const ru: typeof en = {
     },
     media: {
       name: "Медиа",
-      description: "Галереи, плееры, карусели и насыщенные движением холсты.",
+      description: "Галереи, плееры, карусели и интерфейсы с насыщенной анимацией.",
+    },
+    gaming: {
+      name: "Игры",
+      description: "HUD, инвентари, сценарии квестов и игровые оверлеи.",
     },
   },
   home: {
-    title: "Создайте свою библиотеку SwiftUI-компонентов.",
+    title: "Создайте свою SwiftUI-библиотеку.",
     description:
-      "CopyMyUI помогает iOS-командам выпускать продукты быстрее с готовыми SwiftUI-компонентами. Находите проверенные UI-паттерны, копируйте код для продакшена и сохраняйте избранное, чтобы не собирать типовые экраны с нуля.",
+      "Создавайте приложения быстрее: готовые SwiftUI-компоненты и рабочий код помогут не собирать одни и те же экраны заново.",
     searchPlaceholder: "Ищите названия, описания, авторов и дашборды...",
     exploreComponents: "Смотреть компоненты",
     topRatedNow: "Самое сохраненное сейчас",
     freshlyApproved: "Недавно добавлено",
     openComponent: "Открыть компонент",
-    topRatedEyebrow: "Чаще в избранном",
+    topRatedEyebrow: "Популярное",
     topRatedTitle: "Блоки, которые хочется добавить в избранное",
     browseEveryComponent: "Смотреть все",
     categoryLeadersEyebrow: "Лидеры категорий",
@@ -1075,7 +1087,7 @@ const ru: typeof en = {
     title: "Публичные SwiftUI-компоненты",
     description:
       "Ищите одобренные публикации, переключайтесь между категориями и сохраняйте избранное.",
-    searchPlaceholder: "Поиск по названию, краткому описанию, полному описанию или автору",
+    searchPlaceholder: "Поиск по названию или автору",
     allCategories: "Все категории",
     allAccessTypes: "Все типы доступа",
     freeOnly: "Только бесплатно",
@@ -1111,7 +1123,7 @@ const ru: typeof en = {
     buyNowLabel: "Купить сейчас",
     signInToBuy: "Войти для покупки",
     revisionTrailEyebrow: "Последнее одобрение",
-    revisionTrailTitle: "Последнее одобренное обновление",
+    revisionTrailTitle: "Последнее обновление",
     needMoreEyebrow: "Нужны ещё компоненты?",
     needMoreTitle: "Откройте всю публичную коллекцию",
     needMoreDescription:
@@ -1130,7 +1142,7 @@ const ru: typeof en = {
     premiumBadge: "Премиум",
     viewComponent: "Открыть компонент",
     emptyEyebrow: "Начните создавать",
-    emptyTitle: "Вы ещё не создали ни одного компонента",
+    emptyTitle: "Компонентов пока нет",
     emptyDescription:
       "Соберите свой первый SwiftUI-компонент, загрузите скриншоты и решите, когда отправить его на модерацию.",
     emptyAction: "Создать первый компонент",
@@ -1167,7 +1179,7 @@ const ru: typeof en = {
     description:
       "Все разблокированные компоненты остаются здесь, чтобы вы могли в любой момент вернуться к платным SwiftUI-компонентам.",
     emptyEyebrow: "Покупок пока нет",
-    emptyTitle: "Вы ещё не купили ни одного премиум-компонента",
+    emptyTitle: "Премиум-покупок пока нет",
     emptyDescription:
       "Откройте премиум-каталог, разблокируйте нужные компоненты, и они останутся доступны в этой библиотеке.",
     emptyAction: "Смотреть премиум-компоненты",
@@ -1180,7 +1192,7 @@ const ru: typeof en = {
     componentCount: "Одобренные компоненты",
     premiumCount: "Премиум-компоненты",
     freeSectionEyebrow: "Бесплатные опубликованные компоненты",
-    freeSectionTitle: "Одобренные бесплатные релизы",
+    freeSectionTitle: "Релизы",
     premiumSectionEyebrow: "Премиум-компоненты",
     premiumSectionTitle: "Одобренные премиум-релизы",
   },
@@ -1297,7 +1309,7 @@ const ru: typeof en = {
       "Используйте Google-аккаунт, чтобы создавать, добавлять в избранное и модерировать компоненты.",
     authNotConfigured:
       "Локально ещё не настроены ключи Google Auth, поэтому вход через Google останется недоступным, пока их не добавят.",
-    continueWithGoogle: "Продолжить через Google",
+    continueWithGoogle: "Войти через Google",
     devShortcuts: "Dev-ярлыки",
     signInAs: "Войти как {email}",
   },
@@ -1382,9 +1394,9 @@ const ru: typeof en = {
     copied: "SwiftUI-код скопирован.",
     expand: "Показать код полностью",
     collapse: "Свернуть код",
-    authRequiredTitle: "Войдите, чтобы копировать код",
+    authRequiredTitle: "Войдите, чтобы скопировать",
     authRequiredDescription:
-      "Продолжите через Google, чтобы скопировать SwiftUI-код и вернуться к этому компоненту.",
+      "Продолжите через Google, чтобы скопировать SwiftUI-код и вернуться к компонентам.",
   },
   notFound: {
     eyebrow: "Не найдено",
@@ -1407,7 +1419,7 @@ const ru: typeof en = {
       description: "Описание должно содержать от 40 до 1400 символов.",
       changelog: "Список изменений должен быть не длиннее 400 символов.",
       sellerTargetPriceCents: "Укажите корректную сумму премиум-выплаты.",
-      swiftCode: "SwiftUI-код должен содержать от 80 до 20000 символов.",
+      swiftCode: "SwiftUI-код должен содержать от 80 до 100000 символов.",
       screenshots: "Добавьте от 1 до 4 скриншотов.",
     },
     service: {
@@ -1484,8 +1496,8 @@ const de: typeof en = {
   },
   footer: {
     description:
-      "Finde hochwertige SwiftUI-Komponenten, speichere Favoriten und baue iOS-Screens schneller mit sofort nutzbarem Code.",
-    exploreComponents: "Komponenten entdecken",
+      "Baue iOS-Screens schneller mit sofort einsetzbaren SwiftUI-Komponenten und produktionsreifem Code, damit du typische Screens nicht jedes Mal von Grund auf neu bauen musst.",
+    exploreComponents: "Komponenten",
     creatorDashboard: "Creator-Dashboard",
     xLabel: "X / Web3Igor",
   },
@@ -1531,11 +1543,15 @@ const de: typeof en = {
       name: "Medien",
       description: "Galerien, Player, Karussells und bewegungsreiche Flächen.",
     },
+    gaming: {
+      name: "Spiele",
+      description: "HUDs, Inventare, Quest-Abläufe und Gameplay-Overlays.",
+    },
   },
   home: {
-    title: "Baue deine SwiftUI-Komponentenbibliothek.",
+    title: "Baue deine SwiftUI-Bibliothek.",
     description:
-      "CopyMyUI hilft iOS-Teams, mit sofort nutzbaren SwiftUI-Komponenten schneller zu liefern. Finde bewährte UI-Muster, übernimm produktionsreifen Code und speichere Favoriten, damit du häufige Screens nicht jedes Mal neu bauen musst.",
+      "Liefere schneller mit sofort einsetzbaren SwiftUI-Komponenten und produktionsreifem Code, damit du häufige Ansichten nicht immer wieder von Grund auf bauen musst.",
     searchPlaceholder: "Suche nach Titeln, Beschreibungen, Erstellern und Dashboards...",
     exploreComponents: "Komponenten entdecken",
     topRatedNow: "Derzeit meistgespeichert",
@@ -1557,7 +1573,7 @@ const de: typeof en = {
     title: "Öffentliche SwiftUI-Komponenten",
     description:
       "Suche freigegebene Einreichungen, springe zwischen Kategorien und speichere Favoriten für später.",
-    searchPlaceholder: "Nach Titel, Kurztext, Beschreibung oder Ersteller suchen",
+    searchPlaceholder: "Nach Titel oder Autor suchen",
     allCategories: "Alle Kategorien",
     allAccessTypes: "Alle Zugriffstypen",
     freeOnly: "Nur kostenlos",
@@ -1593,7 +1609,7 @@ const de: typeof en = {
     buyNowLabel: "Jetzt kaufen",
     signInToBuy: "Zum Kaufen anmelden",
     revisionTrailEyebrow: "Letzte Freigabe",
-    revisionTrailTitle: "Zuletzt freigegebenes Update",
+    revisionTrailTitle: "Letztes Update",
     needMoreEyebrow: "Mehr Komponenten gesucht?",
     needMoreTitle: "Die vollständige öffentliche Sammlung erkunden",
     needMoreDescription:
@@ -1612,7 +1628,7 @@ const de: typeof en = {
     premiumBadge: "Kostenpflichtig",
     viewComponent: "Komponente ansehen",
     emptyEyebrow: "Loslegen",
-    emptyTitle: "Du hast noch keine Komponente erstellt",
+    emptyTitle: "Noch keine Komponenten",
     emptyDescription:
       "Erstelle deinen ersten SwiftUI-Baustein, lade Screenshots hoch und entscheide, wann er für die Moderation bereit ist.",
     emptyAction: "Erste Komponente erstellen",
@@ -1649,7 +1665,7 @@ const de: typeof en = {
     description:
       "Alles, was du freigeschaltet hast, bleibt hier verfügbar, damit du jederzeit zu bezahlten SwiftUI-Komponenten zurückkehren kannst.",
     emptyEyebrow: "Noch keine Käufe",
-    emptyTitle: "Du hast noch keine Premium-Komponenten gekauft",
+    emptyTitle: "Noch keine Premium-Käufe",
     emptyDescription:
       "Erkunde den Premium-Katalog, schalte die gewünschten Komponenten frei und behalte sie dauerhaft in dieser Bibliothek.",
     emptyAction: "Premium-Komponenten ansehen",
@@ -1662,7 +1678,7 @@ const de: typeof en = {
     componentCount: "Freigegebene Komponenten",
     premiumCount: "Premium-Komponenten",
     freeSectionEyebrow: "Geteilte kostenlose Komponenten",
-    freeSectionTitle: "Freigegebene kostenlose Releases",
+    freeSectionTitle: "Veröffentlichungen",
     premiumSectionEyebrow: "Premium-Komponenten",
     premiumSectionTitle: "Freigegebene Premium-Releases",
   },
@@ -1779,7 +1795,7 @@ const de: typeof en = {
       "Nutze dein Google-Konto, um Komponenten zu erstellen, zu favorisieren und zu moderieren.",
     authNotConfigured:
       "Die Google-Auth-Zugangsdaten sind lokal noch nicht konfiguriert, daher bleibt die Google-Anmeldung deaktiviert, bis sie eingerichtet sind.",
-    continueWithGoogle: "Mit Google fortfahren",
+    continueWithGoogle: "Mit Google anmelden",
     devShortcuts: "Entwicklungs-Shortcuts",
     signInAs: "Anmelden als {email}",
   },
@@ -1864,9 +1880,9 @@ const de: typeof en = {
     copied: "SwiftUI-Code kopiert.",
     expand: "Vollständigen Code anzeigen",
     collapse: "Code einklappen",
-    authRequiredTitle: "Anmelden, um Code zu kopieren",
+    authRequiredTitle: "Zum Kopieren anmelden",
     authRequiredDescription:
-      "Fahre mit Google fort, um den SwiftUI-Code zu kopieren und zu dieser Komponente zurückzukehren.",
+      "Fahre mit Google fort, um den SwiftUI-Code zu kopieren und zu den Komponenten zurückzukehren.",
   },
   notFound: {
     eyebrow: "Nicht gefunden",
@@ -1889,7 +1905,7 @@ const de: typeof en = {
       description: "Die Beschreibung muss zwischen 40 und 1400 Zeichen lang sein.",
       changelog: "Das Changelog darf höchstens 400 Zeichen haben.",
       sellerTargetPriceCents: "Lege einen gültigen Premium-Auszahlungsbetrag fest.",
-      swiftCode: "Der SwiftUI-Code muss zwischen 80 und 20000 Zeichen lang sein.",
+      swiftCode: "Der SwiftUI-Code muss zwischen 80 und 100000 Zeichen lang sein.",
       screenshots: "Füge zwischen 1 und 4 Screenshots hinzu.",
     },
     service: {
