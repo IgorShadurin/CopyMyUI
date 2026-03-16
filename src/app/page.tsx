@@ -2,17 +2,16 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ArrowRight, Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Bookmark, ChevronRight, Crown, Grid2X2, Library, Sparkles } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCard } from "@/components/component-card";
+import { AppActionLink } from "@/components/ui/app-action-link";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
-import { buttonVariants } from "@/components/ui/button-variants";
 import { getHomepageData, listCategories } from "@/lib/server/component-service";
-import { cn } from "@/lib/utils";
 import { getViewer } from "@/lib/viewer";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -69,25 +68,26 @@ export default async function Home() {
                   {messages.home.description}
                 </p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:max-w-2xl">
-                <Link
-                  href={withLocalePath(locale, "/components")}
-                  className={cn(buttonVariants({ size: "lg" }), "rounded-[1.2rem] px-5")}
-                >
-                  {messages.home.exploreComponents}
-                  <ArrowRight className="size-4" />
-                </Link>
-                <Link
-                  href={withLocalePath(locale, "/components?access=premium")}
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "lg" }),
-                    "rounded-[1.2rem] px-5"
-                  )}
-                >
-                  <Crown className="size-4" />
-                  {messages.home.browsePremium}
-                </Link>
-              </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:max-w-2xl">
+                  <AppActionLink
+                    href={withLocalePath(locale, "/components")}
+                    uiSize="lg"
+                    icon={<ArrowRight className="size-4" />}
+                    iconPosition="right"
+                    className="w-full justify-center"
+                  >
+                    {messages.home.exploreComponents}
+                  </AppActionLink>
+                  <AppActionLink
+                    href={withLocalePath(locale, "/components?access=premium")}
+                    tone="outline"
+                    uiSize="lg"
+                    icon={<Crown className="size-4" />}
+                    className="w-full justify-center"
+                  >
+                    {messages.home.browsePremium}
+                  </AppActionLink>
+                </div>
             </div>
 
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
@@ -96,7 +96,7 @@ export default async function Home() {
                   className="group rounded-[1.1rem] border border-black/8 bg-[rgba(252,251,247,0.95)] px-4 py-3 transition-colors hover:bg-white"
                 >
                   <p className="flex items-center gap-2 text-sm font-medium text-foreground">
-                    <Star className="size-4 text-muted-foreground" />
+                    <Bookmark className="size-4 text-muted-foreground" />
                     {messages.home.topRatedEyebrow}
                   </p>
                   <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground transition-colors group-hover:text-foreground">
