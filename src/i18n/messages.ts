@@ -42,7 +42,7 @@ const en = {
   footer: {
     description:
       "Ship iOS screens faster with ready-to-use SwiftUI components and production-ready code, so you do not rebuild common screens from scratch.",
-    exploreComponents: "Find",
+    exploreComponents: "Explore components",
     creatorDashboard: "Creator dashboard",
     xLabel: "X / Web3Igor",
   },
@@ -98,7 +98,7 @@ const en = {
     description:
       "Ship faster with ready-to-use SwiftUI components and production-ready code, so you do not rebuild common screens from scratch.",
     searchPlaceholder: "Search titles, descriptions, creators, dashboards...",
-    exploreComponents: "Explore components",
+    exploreComponents: "Find",
     topRatedNow: "Most favorited right now",
     freshlyApproved: "Freshly added",
     openComponent: "Open component",
@@ -525,7 +525,7 @@ const es: typeof en = {
   footer: {
     description:
       "Crea pantallas iOS más rápido con componentes SwiftUI listos para usar y código listo para producción, para no reconstruir pantallas comunes desde cero.",
-    exploreComponents: "Buscar",
+    exploreComponents: "Componentes",
     creatorDashboard: "Panel del creador",
     xLabel: "X / Web3Igor",
   },
@@ -581,7 +581,7 @@ const es: typeof en = {
     description:
       "Publica más rápido con componentes SwiftUI listos para usar y código listo para producción, para no volver a crear pantallas comunes desde cero.",
     searchPlaceholder: "Buscar títulos, descripciones, creadores y dashboards...",
-    exploreComponents: "Componentes",
+    exploreComponents: "Buscar",
     topRatedNow: "Más guardados ahora",
     freshlyApproved: "Recién añadido",
     openComponent: "Abrir componente",
@@ -1011,7 +1011,7 @@ const ru: typeof en = {
   footer: {
     description:
       "Собирайте iOS-экраны быстрее с готовыми SwiftUI-компонентами и кодом, готовым к выпуску, чтобы не делать типовые экраны с нуля.",
-    exploreComponents: "Найти",
+    exploreComponents: "Компоненты",
     creatorDashboard: "Панель автора",
     xLabel: "X / Web3Igor",
   },
@@ -1067,7 +1067,7 @@ const ru: typeof en = {
     description:
       "Создавайте приложения быстрее: готовые SwiftUI-компоненты и рабочий код помогут не собирать одни и те же экраны заново.",
     searchPlaceholder: "Ищите названия, описания, авторов и дашборды...",
-    exploreComponents: "Компоненты",
+    exploreComponents: "Найти",
     topRatedNow: "Самое сохраненное сейчас",
     freshlyApproved: "Недавно добавлено",
     openComponent: "Открыть компонент",
@@ -1497,7 +1497,7 @@ const de: typeof en = {
   footer: {
     description:
       "Baue iOS-Screens schneller mit sofort einsetzbaren SwiftUI-Komponenten und produktionsreifem Code, damit du typische Screens nicht jedes Mal von Grund auf neu bauen musst.",
-    exploreComponents: "Finden",
+    exploreComponents: "Komponenten",
     creatorDashboard: "Creator-Dashboard",
     xLabel: "X / Web3Igor",
   },
@@ -1553,7 +1553,7 @@ const de: typeof en = {
     description:
       "Liefere schneller mit sofort einsetzbaren SwiftUI-Komponenten und produktionsreifem Code, damit du häufige Ansichten nicht immer wieder von Grund auf bauen musst.",
     searchPlaceholder: "Suche nach Titeln, Beschreibungen, Erstellern und Dashboards...",
-    exploreComponents: "Komponenten",
+    exploreComponents: "Finden",
     topRatedNow: "Derzeit meistgespeichert",
     freshlyApproved: "Frisch hinzugefügt",
     openComponent: "Komponente öffnen",
