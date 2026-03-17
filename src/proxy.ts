@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { localeCookieName, localeHeaderName } from "@/i18n/config";
-import { getRequestOrigin } from "@/lib/request-origin";
 import {
   getLocaleFromPathname,
   isLocale,
@@ -25,7 +24,6 @@ export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const search = request.nextUrl.search;
   const localeFromPath = getLocaleFromPathname(pathname);
-  const requestOrigin = getRequestOrigin(request);
   const requestLocaleHeader = request.headers.get(localeHeaderName);
 
   if (!localeFromPath) {
@@ -38,7 +36,9 @@ export function proxy(request: NextRequest) {
       return response;
     }
 
-    const redirectUrl = new URL(withLocalePath(locale, `${pathname}${search}`), requestOrigin);
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = withLocalePath(locale, pathname);
+    redirectUrl.search = search;
 
     const response = NextResponse.redirect(redirectUrl);
     response.cookies.set(localeCookieName, locale, {
@@ -51,7 +51,8 @@ export function proxy(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(localeHeaderName, localeFromPath);
 
-  const rewriteUrl = new URL(stripLocaleFromPathname(pathname), requestOrigin);
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = stripLocaleFromPathname(pathname);
   rewriteUrl.search = search;
 
   const response = NextResponse.rewrite(rewriteUrl, {
