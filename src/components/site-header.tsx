@@ -245,7 +245,7 @@ export function SiteHeader({
                 </DialogHeader>
 
                 {viewer ? (
-                  <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/6 bg-white/90 px-4 py-3">
+                  <div className="flex items-center gap-3 rounded-[1.4rem] border border-black/6 bg-white/90 px-4 py-3 pr-12">
                     <Avatar size="sm" className="size-10">
                       <AvatarImage
                         src={viewer.image ?? undefined}
