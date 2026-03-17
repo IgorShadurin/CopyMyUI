@@ -16,6 +16,42 @@ const publicUserSelect = {
   profileSlug: true,
 } satisfies Prisma.UserSelect;
 
+const ALLOWED_REGISTRATION_RANGES = [7, 30, 90] as const;
+
+function normalizeRegistrationRange(days?: number) {
+  if (!days) {
+    return 30;
+  }
+
+  return ALLOWED_REGISTRATION_RANGES.includes(days as (typeof ALLOWED_REGISTRATION_RANGES)[number])
+    ? days
+    : 30;
+}
+
+function startOfUtcDay(value: Date) {
+  return new Date(
+    Date.UTC(value.getUTCFullYear(), value.getUTCMonth(), value.getUTCDate())
+  );
+}
+
+function toUtcDayKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function buildRegistrationDays(days: number) {
+  const normalizedDays = normalizeRegistrationRange(days);
+  const today = startOfUtcDay(new Date());
+  const result: Date[] = [];
+
+  for (let index = normalizedDays - 1; index >= 0; index -= 1) {
+    const day = new Date(today);
+    day.setUTCDate(day.getUTCDate() - index);
+    result.push(day);
+  }
+
+  return result;
+}
+
 export async function purchasePremiumComponent(componentId: string, buyerId: string) {
   const platformConfig = await getPlatformConfig();
 
@@ -167,9 +203,11 @@ export async function getPublicCreatorProfile(profileSlug: string, viewerId?: st
   };
 }
 
-export async function getAdminDashboardData() {
+export async function getAdminDashboardData(days: number = 30) {
+  const registrationDays = buildRegistrationDays(days);
+  const registrationStart = registrationDays[0] ?? startOfUtcDay(new Date());
   const platformConfig = await getPlatformConfig();
-  const [premiumComponents, recentPurchases] = await Promise.all([
+  const [premiumComponents, recentPurchases, users] = await Promise.all([
     prisma.component.findMany({
       where: {
         approvedRevisionId: { not: null },
@@ -200,7 +238,23 @@ export async function getAdminDashboardData() {
         },
       },
     }),
+    prisma.user.findMany({
+      where: {
+        createdAt: {
+          gte: registrationStart,
+        },
+      },
+      select: {
+        createdAt: true,
+      },
+    }),
   ]);
+
+  const registrationsByDay = users.reduce<Map<string, number>>((map, user) => {
+    const key = toUtcDayKey(startOfUtcDay(user.createdAt));
+    map.set(key, (map.get(key) ?? 0) + 1);
+    return map;
+  }, new Map());
 
   const totals = recentPurchases.reduce(
     (summary, purchase) => ({
@@ -237,5 +291,12 @@ export async function getAdminDashboardData() {
         purchase.buyerId
       ),
     })),
+    userRegistrations: registrationDays.map((day) => {
+      const key = toUtcDayKey(day);
+      return {
+        date: day,
+        count: registrationsByDay.get(key) ?? 0,
+      };
+    }),
   };
 }

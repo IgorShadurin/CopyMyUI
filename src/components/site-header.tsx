@@ -97,7 +97,8 @@ export function SiteHeader({
                 <DropdownMenuTrigger
                   className={cn(
                     buttonVariants({ variant: "outline", size: "sm" }),
-                    "h-11 items-center gap-3 rounded-full border-black/8 bg-white/90 px-2.5 shadow-sm"
+                    "h-11 items-center gap-3 rounded-full bg-white/90 px-2.5 shadow-sm",
+                    isStaff ? "border-red-400/90" : "border-black/8"
                   )}
                   aria-label={messages.header.menu}
                 >
@@ -135,6 +136,15 @@ export function SiteHeader({
                   </div>
 
                   <div className="grid gap-1 rounded-[1rem] border border-black/6 bg-white/90 p-1.5">
+                    {isAdmin ? (
+                      <DropdownMenuItem
+                        render={<Link href={withLocalePath(locale, "/moderation")} />}
+                        className="justify-start rounded-[0.8rem] px-3 py-2.5"
+                      >
+                        <ShieldCheck className="size-4" />
+                        {messages.header.moderation}
+                      </DropdownMenuItem>
+                    ) : null}
                     <DropdownMenuItem
                       render={<Link href={withLocalePath(locale, "/dashboard")} />}
                       className="justify-start rounded-[0.8rem] px-3 py-2.5"
@@ -142,7 +152,7 @@ export function SiteHeader({
                       <LayoutTemplate className="size-4" />
                       {messages.header.dashboard}
                     </DropdownMenuItem>
-                    {isStaff ? (
+                    {isStaff && !isAdmin ? (
                       <DropdownMenuItem
                         render={<Link href={withLocalePath(locale, "/moderation")} />}
                         className="justify-start rounded-[0.8rem] px-3 py-2.5"
@@ -211,7 +221,8 @@ export function SiteHeader({
                   variant="outline"
                   size={viewer ? "sm" : "icon-sm"}
                   className={cn(
-                    "rounded-full border-black/8 bg-white/90 shadow-sm",
+                    "rounded-full bg-white/90 shadow-sm",
+                    viewer && isStaff ? "border-red-400/90" : "border-black/8",
                     viewer ? "h-11 max-w-[min(17rem,calc(100vw-8rem))] gap-3 px-2.5" : ""
                   )}
                   aria-label={messages.header.menu}

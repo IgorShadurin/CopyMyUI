@@ -798,6 +798,311 @@ export async function getDashboardData(ownerId: string) {
   );
 }
 
+export async function getAdminComponentsByCategory() {
+  const [categories, components] = await Promise.all([
+    prisma.category.findMany({
+      include: categoryInclude,
+      orderBy: { name: "asc" },
+    }),
+    prisma.component.findMany({
+      orderBy: [{ updatedAt: "desc" }],
+      include: {
+        primaryCategory: {
+          include: categoryInclude,
+        },
+        categoryLinks: orderedCategoryLinks,
+        owner: {
+          select: publicUserSelect,
+        },
+        activeRevision: {
+          select: {
+            title: true,
+            summary: true,
+            accessType: true,
+            screenshots: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              select: {
+                url: true,
+                previewUrl: true,
+                mimeType: true,
+                mediaType: true,
+              },
+            },
+          },
+        },
+        approvedRevision: {
+          select: {
+            title: true,
+            summary: true,
+            accessType: true,
+            screenshots: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              select: {
+                url: true,
+                previewUrl: true,
+                mimeType: true,
+                mediaType: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  const mappedComponents = components.map((component) => {
+    const visibleRevision = component.activeRevision ?? component.approvedRevision;
+
+    return {
+      id: component.id,
+      slug: component.slug,
+      status: component.status,
+      featured: component.featured,
+      updatedAt: component.updatedAt,
+      publishedAt: component.publishedAt,
+      favoritesCount: component.favoritesCount,
+      owner: component.owner,
+      primaryCategory: component.primaryCategory,
+      primaryCategoryId: component.primaryCategoryId,
+      categories: getOrderedCategories(component),
+      title: visibleRevision?.title ?? "Untitled component",
+      summary: visibleRevision?.summary ?? "No summary yet.",
+      accessType: visibleRevision?.accessType ?? ComponentAccessType.FREE,
+      previewImage: visibleRevision
+        ? getPreviewImageUrl(visibleRevision.screenshots)
+        : null,
+      hasApprovedRevision: Boolean(component.approvedRevisionId),
+    };
+  });
+
+  return categories.map((category) => ({
+    category,
+    components: mappedComponents.filter(
+      (component) => component.primaryCategoryId === category.id
+    ),
+  }));
+}
+
+export async function getAdminComponentEditorData(componentId: string) {
+  const component = await prisma.component.findUnique({
+    where: { id: componentId },
+    include: {
+      primaryCategory: {
+        include: categoryInclude,
+      },
+      categoryLinks: orderedCategoryLinks,
+      activeRevision: {
+        select: {
+          id: true,
+          title: true,
+          summary: true,
+          accessType: true,
+        },
+      },
+      approvedRevision: {
+        select: {
+          id: true,
+          title: true,
+          summary: true,
+          accessType: true,
+        },
+      },
+    },
+  });
+
+  if (!component) {
+    return null;
+  }
+
+  const editableRevision = component.activeRevision ?? component.approvedRevision;
+
+  if (!editableRevision) {
+    return null;
+  }
+
+  return {
+    id: component.id,
+    slug: component.slug,
+    status: component.status,
+    featured: component.featured,
+    primaryCategoryId: component.primaryCategoryId,
+    categoryIds: getOrderedCategories(component).map((category) => category.id),
+    categories: getOrderedCategories(component),
+    title: editableRevision.title,
+    summary: editableRevision.summary,
+    accessType: editableRevision.accessType,
+  };
+}
+
+export async function updateComponentMetadataByAdmin(
+  componentId: string,
+  input: {
+    title: string;
+    summary: string;
+    primaryCategoryId: string;
+    featured: boolean;
+  }
+) {
+  return prisma.$transaction(async (tx) => {
+    const component = await tx.component.findUnique({
+      where: { id: componentId },
+      include: {
+        categoryLinks: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+        },
+      },
+    });
+
+    if (!component) {
+      throw new Error("Component not found.");
+    }
+
+    const existingCategoryIds = component.categoryLinks.map((link) => link.categoryId);
+    const nextCategoryIds = [
+      input.primaryCategoryId,
+      ...existingCategoryIds.filter((categoryId) => categoryId !== input.primaryCategoryId),
+    ].slice(0, 3);
+
+    await syncComponentCategories(
+      tx,
+      component.id,
+      input.primaryCategoryId,
+      nextCategoryIds
+    );
+
+    await tx.component.update({
+      where: { id: component.id },
+      data: {
+        featured: input.featured,
+      },
+    });
+
+    const revisionIds = Array.from(
+      new Set([component.activeRevisionId, component.approvedRevisionId].filter(Boolean))
+    ) as string[];
+
+    if (revisionIds.length === 0) {
+      throw new Error("No active revision exists for this component.");
+    }
+
+    await tx.componentRevision.updateMany({
+      where: {
+        id: {
+          in: revisionIds,
+        },
+      },
+      data: {
+        title: input.title,
+        summary: input.summary,
+      },
+    });
+
+    await syncApprovedComponentSearchIndex(tx, component.id);
+
+    return {
+      componentId: component.id,
+      slug: component.slug,
+    };
+  });
+}
+
+export async function declineComponentByAdmin(
+  componentId: string,
+  adminId: string,
+  note?: string | null
+) {
+  return prisma.$transaction(async (tx) => {
+    const component = await tx.component.findUnique({
+      where: { id: componentId },
+      select: {
+        id: true,
+        slug: true,
+        activeRevisionId: true,
+      },
+    });
+
+    if (!component) {
+      throw new Error("Component not found.");
+    }
+
+    const now = new Date();
+    const trimmedNote = note?.trim() || "Declined by admin.";
+
+    if (component.activeRevisionId) {
+      await tx.componentRevision.update({
+        where: {
+          id: component.activeRevisionId,
+        },
+        data: {
+          status: ComponentStatus.DECLINED,
+          reviewNote: trimmedNote,
+          reviewerId: adminId,
+          reviewedAt: now,
+        },
+      });
+
+      await tx.moderationLog.create({
+        data: {
+          revisionId: component.activeRevisionId,
+          moderatorId: adminId,
+          decision: ModerationDecision.DECLINED,
+          note: trimmedNote,
+        },
+      });
+    }
+
+    await tx.component.update({
+      where: { id: component.id },
+      data: {
+        status: ComponentStatus.DECLINED,
+        approvedRevisionId: null,
+        publishedAt: null,
+      },
+    });
+
+    await syncApprovedComponentSearchIndex(tx, component.id);
+
+    return {
+      componentId: component.id,
+      slug: component.slug,
+    };
+  });
+}
+
+export async function deleteComponentByAdmin(componentId: string) {
+  return prisma.$transaction(async (tx) => {
+    const component = await tx.component.findUnique({
+      where: { id: componentId },
+      select: {
+        id: true,
+        slug: true,
+      },
+    });
+
+    if (!component) {
+      throw new Error("Component not found.");
+    }
+
+    await tx.component.delete({
+      where: {
+        id: componentId,
+      },
+    });
+
+    await syncApprovedComponentSearchIndex(tx, componentId);
+
+    return {
+      slug: component.slug,
+    };
+  });
+}
+
 export async function getFavoritesData(userId: string) {
   const platformConfig = await getPlatformConfig();
   const favorites = await prisma.favorite.findMany({

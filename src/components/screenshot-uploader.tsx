@@ -10,6 +10,7 @@ import { useI18n } from "@/i18n/client";
 import { formatMessage } from "@/i18n/format";
 import { Button } from "@/components/ui/button";
 import { MAX_SCREENSHOTS } from "@/lib/constants";
+import { requestConfirmation } from "@/lib/request-confirmation";
 import { withStandardAltText } from "@/lib/screenshot-alt-text";
 
 export type ScreenshotDraft = {
@@ -143,7 +144,9 @@ export function ScreenshotUploader({
                 size="sm"
                 className="rounded-full text-rose-600"
                 onClick={() => {
-                  const shouldRemove = window.confirm(messages.upload.removeScreenshotConfirm);
+                  const shouldRemove = requestConfirmation(
+                    messages.upload.removeScreenshotConfirm
+                  );
 
                   if (!shouldRemove) {
                     return;

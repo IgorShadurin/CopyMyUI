@@ -7,6 +7,7 @@ import { AlertCircle, Check, X } from "lucide-react";
 import { useI18n } from "@/i18n/client";
 import { Alert } from "@/components/ui/alert";
 import { AppActionButton } from "@/components/ui/app-action-button";
+import { requestConfirmation } from "@/lib/request-confirmation";
 import { Textarea } from "@/components/ui/textarea";
 
 export function ModerationDecisionForm({
@@ -73,6 +74,9 @@ export function ModerationDecisionForm({
       }
 
       setError(null);
+      if (!requestConfirmation(messages.moderationForm.confirmApprove)) {
+        event.preventDefault();
+      }
       return;
     }
 
@@ -84,8 +88,16 @@ export function ModerationDecisionForm({
       return;
     }
 
-    event.preventDefault();
-    setError(messages.moderationForm.noteRequired);
+    if (!note) {
+      event.preventDefault();
+      setError(messages.moderationForm.noteRequired);
+      return;
+    }
+
+    setError(null);
+    if (!requestConfirmation(messages.moderationForm.confirmDecline)) {
+      event.preventDefault();
+    }
   }
 
   return (
