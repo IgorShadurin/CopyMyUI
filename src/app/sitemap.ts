@@ -53,6 +53,18 @@ function isMissingTableError(error: unknown) {
   return code === "P2021" || code === "P2022";
 }
 
+function isDatabaseUnavailableError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("cannot open database because the directory does not exist") ||
+    message.includes("unable to open database file")
+  );
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     ...localizedEntries("/", {
@@ -93,7 +105,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
     ]);
   } catch (error) {
-    if (!isMissingTableError(error)) {
+    if (!isMissingTableError(error) && !isDatabaseUnavailableError(error)) {
       throw error;
     }
 
