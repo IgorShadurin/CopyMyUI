@@ -237,7 +237,7 @@ export function SiteHeader({
               )}
             </DialogTrigger>
 
-            <DialogContent className="w-[min(23rem,calc(100vw-2rem))] rounded-[1.8rem] border border-black/6 bg-[rgba(252,251,247,0.98)] p-4 shadow-[0_35px_90px_-45px_rgba(22,18,12,0.45)] backdrop-blur">
+            <DialogContent className="w-[min(23rem,calc(100vw-2rem))] rounded-[1.8rem] border border-black/6 bg-[rgba(252,251,247,0.98)] p-4 pt-8 shadow-[0_35px_90px_-45px_rgba(22,18,12,0.45)] backdrop-blur">
               <div className="space-y-4">
                 <DialogHeader className="sr-only">
                   <DialogTitle>{messages.header.menu}</DialogTitle>
