@@ -106,6 +106,49 @@ type SeedComponent = {
   featured: boolean;
   seed: number;
   pattern: SeedPattern;
+  swiftCodeOverride?: string;
+  screenshotsOverride?: Array<{
+    mediaType: "IMAGE" | "VIDEO";
+    mimeType: string | null;
+    url: string;
+    storagePath: string;
+    previewUrl?: string | null;
+    previewStoragePath?: string | null;
+    width?: number | null;
+    height?: number | null;
+    altText: string;
+  }>;
+  accessTypeOverride?: ComponentAccessType;
+  sellerTargetPriceCentsOverride?: number | null;
+  ownerIdOverride?: string;
+};
+
+type GeneratedSeedManifest = {
+  jobId: string;
+  categorySlug: string;
+  generatedAt: string;
+  title: string;
+  summary: string;
+  description: string;
+  appName: string;
+  appStoreSearchHint: string;
+  rationale: string;
+  codeFilePath: string;
+  states: Array<{
+    name: string;
+    appearance: "light" | "dark";
+    description: string;
+    rawScreenshotPath: string;
+    framedScreenshotPath?: string;
+    previewPath?: string;
+    width?: number;
+    height?: number;
+  }>;
+  selfReview: {
+    appealing: boolean;
+    visibleComponent: boolean;
+    notes: string;
+  };
 };
 
 const sampleComponents: SeedComponent[] = [
@@ -2157,6 +2200,133 @@ async function cleanupSeedScreenshotAssets() {
   );
 }
 
+function categoryNameFromSlug(slug: string): CategoryName | null {
+  const category = categories.find(
+    (item) => slugify(item.name, { lower: true, strict: true }) === slug
+  );
+  return category?.name ?? null;
+}
+
+async function createGeneratedScreenshotAssetFromPath(args: {
+  jobId: string;
+  slug: string;
+  title: string;
+  index: number;
+  sourcePath: string;
+}) {
+  const { jobId, slug, title, index, sourcePath } = args;
+  const relativeDirectory = path.join("generated-seed", jobId, "site");
+  const absoluteDirectory = path.join(process.cwd(), "public", relativeDirectory);
+  await mkdir(absoluteDirectory, { recursive: true });
+
+  const baseName = `${String(index + 1).padStart(2, "0")}`;
+  const fullFileName = `${slug}-${baseName}-full.jpg`;
+  const previewFileName = `${slug}-${baseName}-preview.jpg`;
+  const fullStoragePath = path.join(relativeDirectory, fullFileName).replaceAll("\\", "/");
+  const previewStoragePath = path
+    .join(relativeDirectory, previewFileName)
+    .replaceAll("\\", "/");
+  const fullJpegPath = path.join(process.cwd(), "public", fullStoragePath);
+  const previewJpegPath = path.join(process.cwd(), "public", previewStoragePath);
+
+  const fullImage = sharp(sourcePath);
+  const metadata = await fullImage.metadata();
+  const fullWidth = metadata.width ?? 1206;
+  const fullHeight = metadata.height ?? 2622;
+
+  const [fullJpeg, previewJpeg] = await Promise.all([
+    fullImage
+      .rotate()
+      .jpeg({
+        quality: 84,
+        mozjpeg: true,
+      })
+      .toBuffer(),
+    sharp(sourcePath)
+      .rotate()
+      .resize({
+        width: 720,
+        height: 1560,
+        fit: "cover",
+        position: "attention",
+      })
+      .jpeg({
+        quality: 72,
+        mozjpeg: true,
+      })
+      .toBuffer(),
+  ]);
+
+  await Promise.all([
+    writeFile(fullJpegPath, fullJpeg),
+    writeFile(previewJpegPath, previewJpeg),
+  ]);
+
+  return {
+    mediaType: "IMAGE" as const,
+    mimeType: "image/jpeg",
+    url: `/${fullStoragePath}`,
+    storagePath: fullStoragePath,
+    previewUrl: `/${previewStoragePath}`,
+    previewStoragePath,
+    width: fullWidth,
+    height: fullHeight,
+    altText: `${title} preview ${index + 1}`,
+  };
+}
+
+async function loadGeneratedSeedComponents(): Promise<SeedComponent[]> {
+  const directory = path.join(process.cwd(), "prisma", "generated-seed", "components");
+  await mkdir(directory, { recursive: true });
+
+  const entries = await readdir(directory, { withFileTypes: true });
+  const components: SeedComponent[] = [];
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) {
+      continue;
+    }
+
+    const absolutePath = path.join(directory, entry.name);
+    const manifest = JSON.parse(await readFile(absolutePath, "utf8")) as GeneratedSeedManifest;
+    const categoryName = categoryNameFromSlug(manifest.categorySlug);
+
+    if (!categoryName || !manifest.selfReview.appealing || !manifest.selfReview.visibleComponent) {
+      continue;
+    }
+
+    const screenshots = await Promise.all(
+      manifest.states.map((state, index) =>
+        createGeneratedScreenshotAssetFromPath({
+          jobId: manifest.jobId,
+          slug: slugify(manifest.title, { lower: true, strict: true }) || manifest.jobId,
+          title: manifest.title,
+          index,
+          sourcePath: path.resolve(state.rawScreenshotPath),
+        })
+      )
+    );
+
+    components.push({
+      slug: slugify(manifest.title, { lower: true, strict: true }) || manifest.jobId,
+      title: manifest.title,
+      summary: manifest.summary,
+      description: manifest.description,
+      changelog: `Generated from ${manifest.appName} research reference.`,
+      categoryName,
+      featured: false,
+      seed: 1000 + components.length,
+      pattern: "audioShelf",
+      swiftCodeOverride: await readFile(path.resolve(manifest.codeFilePath), "utf8"),
+      screenshotsOverride: screenshots,
+      accessTypeOverride: ComponentAccessType.FREE,
+      sellerTargetPriceCentsOverride: null,
+    });
+  }
+
+  return components;
+}
+
 async function main() {
   await cleanupSeedScreenshotAssets();
 
@@ -2188,6 +2358,11 @@ async function main() {
   const audioTrimmerVideoDimensions = await getVideoDimensionsFromPublicPath(
     "seed-videos/audio-trimmer.mp4"
   );
+  const preservedSeedComponents = sampleComponents.filter(
+    (component) => component.slug === "audio-trimmer"
+  );
+  const generatedSeedComponents = await loadGeneratedSeedComponents();
+  const publicSeedComponents = [...preservedSeedComponents, ...generatedSeedComponents];
 
   for (const category of categories) {
     const created = await prisma.category.create({
@@ -2232,10 +2407,11 @@ async function main() {
     },
   });
 
-  for (const component of sampleComponents) {
+  for (const component of publicSeedComponents) {
     const category = categoryByName.get(component.categoryName)!;
     const screenshots =
-      component.slug === "audio-trimmer"
+      component.screenshotsOverride ??
+      (component.slug === "audio-trimmer"
         ? [
             {
               mediaType: "IMAGE" as const,
@@ -2266,17 +2442,22 @@ async function main() {
               component.title,
               category.accent
             ),
-          ];
-    const sellerTargetPriceCents = premiumPricingBySlug.get(component.slug) ?? null;
+          ]);
+    const sellerTargetPriceCents =
+      component.sellerTargetPriceCentsOverride ??
+      premiumPricingBySlug.get(component.slug) ??
+      null;
     const accessType =
-      sellerTargetPriceCents !== null
+      component.accessTypeOverride ??
+      (sellerTargetPriceCents !== null
         ? ComponentAccessType.PREMIUM
-        : ComponentAccessType.FREE;
+        : ComponentAccessType.FREE);
     const ownerId =
-      component.categoryName === "Social" ||
+      component.ownerIdOverride ??
+      (component.categoryName === "Social" ||
       component.categoryName === "Media"
         ? fanId
-        : creatorId;
+        : creatorId);
 
     const categoryIds = [
       category.id,
@@ -2310,9 +2491,10 @@ async function main() {
         summary: component.summary,
         description: component.description,
         swiftCode:
-          component.slug === "audio-trimmer"
+          component.swiftCodeOverride ??
+          (component.slug === "audio-trimmer"
             ? audioTrimmerSwiftCode
-            : swiftCodeSnippet(component),
+            : swiftCodeSnippet(component)),
         changelog: component.changelog,
         accessType,
         sellerTargetPriceCents,
@@ -2372,175 +2554,6 @@ async function main() {
       },
     });
   }
-
-  const aurora = await prisma.component.findUniqueOrThrow({
-    where: { slug: "aurora-tab-orbit" },
-    include: { approvedRevision: true },
-  });
-
-  const pendingUpdate = await prisma.componentRevision.create({
-    data: {
-      componentId: aurora.id,
-      version: 2,
-      title: aurora.approvedRevision!.title,
-      summary:
-        "An updated pending revision with denser captions and a cleaner active motion curve.",
-      description:
-        "This revision is queued for moderation and demonstrates the re-approval workflow: the original approved version remains public until a moderator approves the update.",
-      swiftCode: `${aurora.approvedRevision!.swiftCode}\n// Pending update revision`,
-      changelog: "Refined active state motion and adjusted icon spacing.",
-      status: ComponentStatus.PENDING_REVIEW,
-      submittedAt: new Date(),
-    },
-  });
-
-  await prisma.component.update({
-    where: { id: aurora.id },
-    data: {
-      status: ComponentStatus.PENDING_REVIEW,
-      activeRevisionId: pendingUpdate.id,
-    },
-  });
-
-  const formsCategory = categoryByName.get("Forms")!;
-  const declinedComponent = await prisma.component.create({
-    data: {
-      slug: "signal-auth-checkpoint",
-      ownerId: creatorId,
-      primaryCategoryId: formsCategory.id,
-      status: ComponentStatus.DECLINED,
-      categoryLinks: {
-        create: [
-          {
-            categoryId: formsCategory.id,
-            sortOrder: 0,
-          },
-        ],
-      },
-    },
-  });
-
-  const declinedRevision = await prisma.componentRevision.create({
-    data: {
-      componentId: declinedComponent.id,
-      version: 1,
-      title: "Signal Auth Checkpoint",
-      summary: "A bright auth checkpoint form that still needs a tighter layout hierarchy.",
-      description:
-        "This sample exists for the moderation dashboard and shows how declined work stays private until a creator ships a corrected revision.",
-      swiftCode: swiftCodeSnippet({
-        title: "Signal Auth Checkpoint",
-        categoryName: "Forms",
-        pattern: "credentialPanel",
-      }),
-      changelog: "Needs stronger hierarchy around the call-to-action.",
-      status: ComponentStatus.DECLINED,
-      submittedAt: new Date(Date.now() - 3600000),
-      reviewedAt: new Date(),
-      reviewerId: moderatorId,
-      reviewNote:
-        "Tighten the hierarchy between trust copy and the action area before publishing.",
-      screenshots: {
-        create: [
-          {
-            ...(await createScreenshotAsset(
-              "signal-auth-checkpoint",
-              "Signal Auth Checkpoint",
-              "#8B5CF6"
-            )),
-            sortOrder: 0,
-          },
-        ],
-      },
-    },
-  });
-
-  await prisma.moderationLog.create({
-    data: {
-      revisionId: declinedRevision.id,
-      moderatorId,
-      decision: ModerationDecision.DECLINED,
-      note: "Tighten the hierarchy between trust copy and the action area before publishing.",
-    },
-  });
-
-  await prisma.component.update({
-    where: { id: declinedComponent.id },
-    data: { activeRevisionId: declinedRevision.id },
-  });
-
-  const mediaCategory = categoryByName.get("Media")!;
-  const draftComponent = await prisma.component.create({
-    data: {
-      slug: "glow-podcast-stack",
-      ownerId: creatorId,
-      primaryCategoryId: mediaCategory.id,
-      status: ComponentStatus.DRAFT,
-      categoryLinks: {
-        create: [
-          {
-            categoryId: mediaCategory.id,
-            sortOrder: 0,
-          },
-        ],
-      },
-    },
-  });
-
-  const draftRevision = await prisma.componentRevision.create({
-    data: {
-      componentId: draftComponent.id,
-      version: 1,
-      title: "Glow Podcast Stack",
-      summary: "A private draft with stacked cards and pinned playback controls.",
-      description:
-        "This draft component illustrates the pre-public workflow where the owner can keep iterating before submitting for moderation.",
-      swiftCode: swiftCodeSnippet({
-        title: "Glow Podcast Stack",
-        categoryName: "Media",
-        pattern: "audioShelf",
-      }),
-      changelog: "Draft in progress.",
-      status: ComponentStatus.DRAFT,
-      screenshots: {
-        create: [
-          {
-            ...(await createScreenshotAsset(
-              "glow-podcast-stack",
-              "Glow Podcast Stack",
-              "#EAB308"
-            )),
-            sortOrder: 0,
-          },
-        ],
-      },
-    },
-  });
-
-  await prisma.component.update({
-    where: { id: draftComponent.id },
-    data: { activeRevisionId: draftRevision.id },
-  });
-
-  const purchasedPremium = await prisma.component.findUniqueOrThrow({
-    where: { slug: "harbor-metrics-deck" },
-    include: {
-      approvedRevision: true,
-    },
-  });
-
-  await prisma.componentPurchase.create({
-    data: {
-      componentId: purchasedPremium.id,
-      buyerId: fanId,
-      sellerId: purchasedPremium.ownerId,
-      approvedRevisionId: purchasedPremium.approvedRevision!.id,
-      sellerTargetPriceCents: purchasedPremium.approvedRevision!.sellerTargetPriceCents!,
-      platformMarkupPercent: 35,
-      platformFeeCents: 3500,
-      salePriceCents: 13500,
-    },
-  });
 
   await rebuildApprovedComponentSearchIndex(prisma);
 }

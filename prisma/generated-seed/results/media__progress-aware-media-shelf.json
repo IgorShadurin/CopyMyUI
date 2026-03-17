@@ -1,0 +1,28 @@
+{
+  "title": "Progress-Aware Media Shelf",
+  "summary": "A polished media shelf with featured content, resume progress, premium badges, and mixed editorial states.",
+  "description": "A reusable SwiftUI media shelf inspired by streaming home feeds. It combines a cinematic featured card with compact continuation items, progress indicators, live and premium badges, and secondary actions so teams can present mixed catalog states in one polished module.",
+  "appName": "Netflix",
+  "appStoreSearchHint": "Netflix https://apps.apple.com/us/app/id363590051 | YouTube https://apps.apple.com/us/app/id544007664 | Apple Music https://apps.apple.com/us/app/id1108187390",
+  "rationale": "Streaming apps repeatedly rely on media shelves that balance featured storytelling with fast resume and premium discovery states, making this a strong reusable building block for iOS media products.",
+  "codeFilePath": "/Users/test/web/copymyui/prisma/generated-seed/work/media__progress-aware-media-shelf/component.swift",
+  "states": [
+    {
+      "name": "mixed",
+      "appearance": "dark",
+      "description": "Featured editorial state with resume, live, and mixed catalog cards.",
+      "rawScreenshotPath": "/Users/test/web/copymyui/public/generated-seed/media__progress-aware-media-shelf/raw/mixed-dark.png"
+    },
+    {
+      "name": "premium-focus",
+      "appearance": "dark",
+      "description": "Premium-heavy variant that emphasizes locked inventory and upgrade context.",
+      "rawScreenshotPath": "/Users/test/web/copymyui/public/generated-seed/media__progress-aware-media-shelf/raw/premium-focus-dark.png"
+    }
+  ],
+  "selfReview": {
+    "appealing": true,
+    "visibleComponent": true,
+    "notes": "The component is clearly visible in both screenshots and the hierarchy reads well at device scale."
+  }
+}

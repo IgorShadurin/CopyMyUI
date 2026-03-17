@@ -1,0 +1,30 @@
+[
+  {
+    "jobId": "media__persistent-mini-player-dock",
+    "categorySlug": "media",
+    "topicId": "persistent-mini-player-dock",
+    "titleHint": "Persistent Mini Player Dock",
+    "appName": "Spotify",
+    "status": "validated",
+    "createdAt": "2026-03-17T20:43:39.979Z",
+    "updatedAt": "2026-03-17T21:37:50.266Z",
+    "attempts": 3,
+    "topicFilePath": "/Users/test/web/copymyui/prisma/generated-seed/topics/media.json",
+    "promptFilePath": "/Users/test/web/copymyui/prisma/generated-seed/prompts/media__persistent-mini-player-dock.md",
+    "resultFilePath": "/Users/test/web/copymyui/prisma/generated-seed/results/media__persistent-mini-player-dock.json"
+  },
+  {
+    "jobId": "media__progress-aware-media-shelf",
+    "categorySlug": "media",
+    "topicId": "progress-aware-media-shelf",
+    "titleHint": "Progress-Aware Media Shelf",
+    "appName": "Netflix",
+    "status": "validated",
+    "createdAt": "2026-03-17T20:43:39.980Z",
+    "updatedAt": "2026-03-17T21:26:01.893Z",
+    "attempts": 3,
+    "topicFilePath": "/Users/test/web/copymyui/prisma/generated-seed/topics/media.json",
+    "promptFilePath": "/Users/test/web/copymyui/prisma/generated-seed/prompts/media__progress-aware-media-shelf.md",
+    "resultFilePath": "/Users/test/web/copymyui/prisma/generated-seed/results/media__progress-aware-media-shelf.json"
+  }
+]

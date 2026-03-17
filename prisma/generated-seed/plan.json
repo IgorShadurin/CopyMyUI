@@ -1,0 +1,128 @@
+{
+  "generatedAt": "2026-03-17T20:28:26.926Z",
+  "preservedSeedComponentSlugs": [
+    "audio-trimmer"
+  ],
+  "categories": [
+    {
+      "name": "Navigation",
+      "slug": "navigation",
+      "targetCount": 100,
+      "referenceApps": [
+        "Airbnb",
+        "Uber",
+        "Spotify",
+        "YouTube",
+        "Instagram",
+        "Slack",
+        "Notion",
+        "Duolingo"
+      ]
+    },
+    {
+      "name": "Dashboards",
+      "slug": "dashboards",
+      "targetCount": 100,
+      "referenceApps": [
+        "Robinhood",
+        "Coinbase",
+        "Shopify",
+        "Stripe Dashboard",
+        "Google Analytics",
+        "Fitness",
+        "Health",
+        "TradingView"
+      ]
+    },
+    {
+      "name": "Commerce",
+      "slug": "commerce",
+      "targetCount": 100,
+      "referenceApps": [
+        "Amazon",
+        "Etsy",
+        "Shop",
+        "Nike",
+        "ASOS",
+        "Zara",
+        "Temu",
+        "DoorDash"
+      ]
+    },
+    {
+      "name": "Paywall",
+      "slug": "paywall",
+      "targetCount": 100,
+      "referenceApps": [
+        "Duolingo",
+        "Headspace",
+        "Calm",
+        "Strava",
+        "Canva",
+        "MyFitnessPal",
+        "Photomath",
+        "Sleep Cycle"
+      ]
+    },
+    {
+      "name": "Social",
+      "slug": "social",
+      "targetCount": 100,
+      "referenceApps": [
+        "Instagram",
+        "TikTok",
+        "Reddit",
+        "LinkedIn",
+        "Discord",
+        "X",
+        "Threads",
+        "BeReal"
+      ]
+    },
+    {
+      "name": "Forms",
+      "slug": "forms",
+      "targetCount": 100,
+      "referenceApps": [
+        "Revolut",
+        "Airbnb",
+        "Uber",
+        "Notion",
+        "Stripe",
+        "Klarna",
+        "Duolingo",
+        "Headspace"
+      ]
+    },
+    {
+      "name": "Media",
+      "slug": "media",
+      "targetCount": 100,
+      "referenceApps": [
+        "Spotify",
+        "Netflix",
+        "YouTube",
+        "Apple Music",
+        "Audible",
+        "Pocket Casts",
+        "Letterboxd",
+        "Pinterest"
+      ]
+    },
+    {
+      "name": "Gaming",
+      "slug": "gaming",
+      "targetCount": 100,
+      "referenceApps": [
+        "Steam Mobile",
+        "Xbox",
+        "PlayStation App",
+        "Discord",
+        "Clash Royale",
+        "Brawl Stars",
+        "PUBG Mobile",
+        "Fortnite"
+      ]
+    }
+  ]
+}
