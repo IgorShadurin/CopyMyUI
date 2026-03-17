@@ -9,6 +9,13 @@ import { prisma } from "@/lib/prisma";
 import { createUniqueProfileSlug } from "@/lib/server/profile-slug";
 import { resolveUserRole } from "@/lib/server/user-management";
 
+// Multi-domain setup (copymyui.com + locale subdomains) requires using the
+// incoming request host. If AUTH_URL/NEXTAUTH_URL is set in platform env,
+// next-auth forces that single origin and can redirect to localhost on errors.
+delete process.env.AUTH_URL;
+delete process.env.NEXTAUTH_URL;
+delete process.env.NEXTAUTH_URL_INTERNAL;
+
 const moderatorEmails = getModeratorEmails();
 const adminEmails = getAdminEmails();
 
