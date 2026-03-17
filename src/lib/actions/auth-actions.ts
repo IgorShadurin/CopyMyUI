@@ -4,31 +4,8 @@ import { signIn, signOut } from "@/auth";
 import { withLocalePath } from "@/i18n/routing";
 import { getRequestLocale } from "@/i18n/server";
 import { DEV_SESSION_COOKIE } from "@/lib/constants";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-async function getRequestOrigin() {
-  const headerStore = await headers();
-  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-
-  if (!host) {
-    return null;
-  }
-
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-
-  return `${protocol}://${host}`;
-}
-
-async function toAbsoluteRedirect(path: string) {
-  const origin = await getRequestOrigin();
-
-  if (!origin) {
-    return path;
-  }
-
-  return new URL(path, origin).toString();
-}
 
 export async function googleSignInAction(formData?: FormData) {
   const locale = await getRequestLocale();
@@ -44,7 +21,7 @@ export async function googleSignInAction(formData?: FormData) {
   }
 
   await signIn("google", {
-    redirectTo: await toAbsoluteRedirect(redirectPath),
+    redirectTo: redirectPath,
   });
 }
 
@@ -59,7 +36,7 @@ export async function signOutAction() {
 
   await signOut({
     redirect: false,
-    redirectTo: await toAbsoluteRedirect(redirectPath),
+    redirectTo: redirectPath,
   });
 
   redirect(redirectPath);
