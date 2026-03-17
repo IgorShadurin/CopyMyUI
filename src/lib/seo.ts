@@ -3,7 +3,12 @@ import type { Metadata } from "next";
 import { APP_NAME } from "@/lib/constants";
 import { getBaseUrl } from "@/lib/env";
 import { defaultLocale, locales, type AppLocale } from "@/i18n/config";
-import { withLocalePath } from "@/i18n/routing";
+import {
+  getLocaleHostForLocale,
+  isDomainLocaleRoutingEnabled,
+  stripLocaleFromPathname,
+  withLocalePath,
+} from "@/i18n/routing";
 
 // Google doesn't enforce hard character limits for title/description.
 // Keep text normalized, but do not hard-truncate metadata values.
@@ -13,6 +18,23 @@ function normalizeText(value: string) {
 
 function absoluteUrl(path: string) {
   return new URL(path, getBaseUrl()).toString();
+}
+
+function absoluteLocaleUrl(locale: AppLocale, path: string) {
+  const localizedPath = withLocalePath(locale, path);
+  const url = new URL(localizedPath, getBaseUrl());
+
+  if (!isDomainLocaleRoutingEnabled()) {
+    return url.toString();
+  }
+
+  const localizedHost = getLocaleHostForLocale(locale, url.host);
+  if (localizedHost) {
+    url.host = localizedHost;
+  }
+
+  url.pathname = stripLocaleFromPathname(url.pathname);
+  return url.toString();
 }
 
 function toOpenGraphLocale(locale: AppLocale) {
@@ -29,19 +51,15 @@ function toOpenGraphLocale(locale: AppLocale) {
 }
 
 export function buildAlternates(locale: AppLocale, path: string): Metadata["alternates"] {
-  const localizedPath = withLocalePath(locale, path);
   const languages = Object.fromEntries(
-    locales.map((currentLocale) => [
-      currentLocale,
-      absoluteUrl(withLocalePath(currentLocale, path)),
-    ])
+    locales.map((currentLocale) => [currentLocale, absoluteLocaleUrl(currentLocale, path)])
   );
 
   return {
-    canonical: absoluteUrl(localizedPath),
+    canonical: absoluteLocaleUrl(locale, path),
     languages: {
       ...languages,
-      "x-default": absoluteUrl(withLocalePath(defaultLocale, path)),
+      "x-default": absoluteLocaleUrl(defaultLocale, path),
     },
   };
 }
@@ -100,8 +118,7 @@ export function createPageMetadata({
 }: CreatePageMetadataInput): Metadata {
   const normalizedTitle = normalizeText(title);
   const normalizedDescription = normalizeText(description);
-  const localizedPath = withLocalePath(locale, path);
-  const url = absoluteUrl(localizedPath);
+  const url = absoluteLocaleUrl(locale, path);
   const image = imagePath ? absoluteUrl(imagePath) : null;
 
   return {

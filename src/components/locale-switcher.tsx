@@ -12,7 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { locales, type AppLocale } from "@/i18n/config";
-import { switchLocaleInPath } from "@/i18n/routing";
+import {
+  getLocaleHostForLocale,
+  isDomainLocaleRoutingEnabled,
+  isLocalDebugHost,
+  stripLocaleFromPathname,
+  switchLocaleInPath,
+} from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 
 const localeFlags: Record<AppLocale, string> = {
@@ -38,11 +44,26 @@ export function LocaleSwitcher({
   const query = searchParams.toString();
 
   function navigateToLocale(nextLocale: AppLocale) {
-    const href = `${switchLocaleInPath(pathname, nextLocale)}${query ? `?${query}` : ""}`;
-
     if (nextLocale === locale) {
       return;
     }
+
+    const useDomainRouting =
+      isDomainLocaleRoutingEnabled() && !isLocalDebugHost(window.location.host);
+
+    const href = useDomainRouting
+      ? (() => {
+          const host = getLocaleHostForLocale(nextLocale, window.location.host);
+          const localizedPath = stripLocaleFromPathname(pathname);
+          const relativeHref = `${localizedPath}${query ? `?${query}` : ""}`;
+
+          if (!host) {
+            return relativeHref;
+          }
+
+          return `${window.location.protocol}//${host}${relativeHref}`;
+        })()
+      : `${switchLocaleInPath(pathname, nextLocale)}${query ? `?${query}` : ""}`;
 
     window.location.assign(href);
   }

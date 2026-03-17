@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { locales } from "@/i18n/config";
+import { isDomainLocaleRoutingEnabled } from "@/i18n/routing";
 import { getBaseUrl } from "@/lib/env";
 
 function privatePaths() {
@@ -14,9 +15,11 @@ function privatePaths() {
     "/purchases",
   ];
 
-  const localizedPaths = locales.flatMap((locale) =>
-    basePaths.map((path) => `/${locale}${path}`)
-  );
+  if (isDomainLocaleRoutingEnabled()) {
+    return basePaths;
+  }
+
+  const localizedPaths = locales.flatMap((locale) => basePaths.map((path) => `/${locale}${path}`));
 
   return [...basePaths, ...localizedPaths];
 }
