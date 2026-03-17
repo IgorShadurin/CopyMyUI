@@ -581,7 +581,7 @@ const es: typeof en = {
     description:
       "Publica más rápido con componentes SwiftUI listos para usar y código listo para producción, para no volver a crear pantallas comunes desde cero.",
     searchPlaceholder: "Buscar títulos, descripciones, creadores y dashboards...",
-    exploreComponents: "Explorar componentes",
+    exploreComponents: "Componentes",
     topRatedNow: "Más guardados ahora",
     freshlyApproved: "Recién añadido",
     openComponent: "Abrir componente",
@@ -1067,7 +1067,7 @@ const ru: typeof en = {
     description:
       "Создавайте приложения быстрее: готовые SwiftUI-компоненты и рабочий код помогут не собирать одни и те же экраны заново.",
     searchPlaceholder: "Ищите названия, описания, авторов и дашборды...",
-    exploreComponents: "Смотреть компоненты",
+    exploreComponents: "Компоненты",
     topRatedNow: "Самое сохраненное сейчас",
     freshlyApproved: "Недавно добавлено",
     openComponent: "Открыть компонент",
@@ -1553,7 +1553,7 @@ const de: typeof en = {
     description:
       "Liefere schneller mit sofort einsetzbaren SwiftUI-Komponenten und produktionsreifem Code, damit du häufige Ansichten nicht immer wieder von Grund auf bauen musst.",
     searchPlaceholder: "Suche nach Titeln, Beschreibungen, Erstellern und Dashboards...",
-    exploreComponents: "Komponenten entdecken",
+    exploreComponents: "Komponenten",
     topRatedNow: "Derzeit meistgespeichert",
     freshlyApproved: "Frisch hinzugefügt",
     openComponent: "Komponente öffnen",
