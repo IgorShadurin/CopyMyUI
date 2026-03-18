@@ -46,7 +46,3 @@ next-env.d.ts
 
 # runtime uploads
 /public/uploads
-
-# generated seed pipeline runtime artifacts
-/prisma/generated-seed/logs
-/prisma/generated-seed/work

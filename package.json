@@ -18,7 +18,6 @@
     "user:set-moderator": "tsx scripts/user-set-role.ts --role=MODERATOR",
     "user:set-user": "tsx scripts/user-set-role.ts --role=USER",
     "i18n:check": "tsx scripts/check-i18n.ts",
-    "seed:pipeline": "tsx scripts/seed-pipeline.ts",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "vitest run",
     "test:watch": "vitest",

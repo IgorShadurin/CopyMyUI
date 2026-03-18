@@ -123,34 +123,6 @@ type SeedComponent = {
   ownerIdOverride?: string;
 };
 
-type GeneratedSeedManifest = {
-  jobId: string;
-  categorySlug: string;
-  generatedAt: string;
-  title: string;
-  summary: string;
-  description: string;
-  appName: string;
-  appStoreSearchHint: string;
-  rationale: string;
-  codeFilePath: string;
-  states: Array<{
-    name: string;
-    appearance: "light" | "dark";
-    description: string;
-    rawScreenshotPath: string;
-    framedScreenshotPath?: string;
-    previewPath?: string;
-    width?: number;
-    height?: number;
-  }>;
-  selfReview: {
-    appealing: boolean;
-    visibleComponent: boolean;
-    notes: string;
-  };
-};
-
 const sampleComponents: SeedComponent[] = [
   {
     slug: "aurora-tab-orbit",
@@ -2200,133 +2172,6 @@ async function cleanupSeedScreenshotAssets() {
   );
 }
 
-function categoryNameFromSlug(slug: string): CategoryName | null {
-  const category = categories.find(
-    (item) => slugify(item.name, { lower: true, strict: true }) === slug
-  );
-  return category?.name ?? null;
-}
-
-async function createGeneratedScreenshotAssetFromPath(args: {
-  jobId: string;
-  slug: string;
-  title: string;
-  index: number;
-  sourcePath: string;
-}) {
-  const { jobId, slug, title, index, sourcePath } = args;
-  const relativeDirectory = path.join("generated-seed", jobId, "site");
-  const absoluteDirectory = path.join(process.cwd(), "public", relativeDirectory);
-  await mkdir(absoluteDirectory, { recursive: true });
-
-  const baseName = `${String(index + 1).padStart(2, "0")}`;
-  const fullFileName = `${slug}-${baseName}-full.jpg`;
-  const previewFileName = `${slug}-${baseName}-preview.jpg`;
-  const fullStoragePath = path.join(relativeDirectory, fullFileName).replaceAll("\\", "/");
-  const previewStoragePath = path
-    .join(relativeDirectory, previewFileName)
-    .replaceAll("\\", "/");
-  const fullJpegPath = path.join(process.cwd(), "public", fullStoragePath);
-  const previewJpegPath = path.join(process.cwd(), "public", previewStoragePath);
-
-  const fullImage = sharp(sourcePath);
-  const metadata = await fullImage.metadata();
-  const fullWidth = metadata.width ?? 1206;
-  const fullHeight = metadata.height ?? 2622;
-
-  const [fullJpeg, previewJpeg] = await Promise.all([
-    fullImage
-      .rotate()
-      .jpeg({
-        quality: 84,
-        mozjpeg: true,
-      })
-      .toBuffer(),
-    sharp(sourcePath)
-      .rotate()
-      .resize({
-        width: 720,
-        height: 1560,
-        fit: "cover",
-        position: "attention",
-      })
-      .jpeg({
-        quality: 72,
-        mozjpeg: true,
-      })
-      .toBuffer(),
-  ]);
-
-  await Promise.all([
-    writeFile(fullJpegPath, fullJpeg),
-    writeFile(previewJpegPath, previewJpeg),
-  ]);
-
-  return {
-    mediaType: "IMAGE" as const,
-    mimeType: "image/jpeg",
-    url: `/${fullStoragePath}`,
-    storagePath: fullStoragePath,
-    previewUrl: `/${previewStoragePath}`,
-    previewStoragePath,
-    width: fullWidth,
-    height: fullHeight,
-    altText: `${title} preview ${index + 1}`,
-  };
-}
-
-async function loadGeneratedSeedComponents(): Promise<SeedComponent[]> {
-  const directory = path.join(process.cwd(), "prisma", "generated-seed", "components");
-  await mkdir(directory, { recursive: true });
-
-  const entries = await readdir(directory, { withFileTypes: true });
-  const components: SeedComponent[] = [];
-
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.endsWith(".json")) {
-      continue;
-    }
-
-    const absolutePath = path.join(directory, entry.name);
-    const manifest = JSON.parse(await readFile(absolutePath, "utf8")) as GeneratedSeedManifest;
-    const categoryName = categoryNameFromSlug(manifest.categorySlug);
-
-    if (!categoryName || !manifest.selfReview.appealing || !manifest.selfReview.visibleComponent) {
-      continue;
-    }
-
-    const screenshots = await Promise.all(
-      manifest.states.map((state, index) =>
-        createGeneratedScreenshotAssetFromPath({
-          jobId: manifest.jobId,
-          slug: slugify(manifest.title, { lower: true, strict: true }) || manifest.jobId,
-          title: manifest.title,
-          index,
-          sourcePath: path.resolve(state.rawScreenshotPath),
-        })
-      )
-    );
-
-    components.push({
-      slug: slugify(manifest.title, { lower: true, strict: true }) || manifest.jobId,
-      title: manifest.title,
-      summary: manifest.summary,
-      description: manifest.description,
-      changelog: `Generated from ${manifest.appName} research reference.`,
-      categoryName,
-      featured: false,
-      seed: 1000 + components.length,
-      pattern: "audioShelf",
-      swiftCodeOverride: await readFile(path.resolve(manifest.codeFilePath), "utf8"),
-      screenshotsOverride: screenshots,
-      accessTypeOverride: ComponentAccessType.FREE,
-      sellerTargetPriceCentsOverride: null,
-    });
-  }
-
-  return components;
-}
-
 async function main() {
   await cleanupSeedScreenshotAssets();
 
@@ -2361,8 +2206,7 @@ async function main() {
   const preservedSeedComponents = sampleComponents.filter(
     (component) => component.slug === "audio-trimmer"
   );
-  const generatedSeedComponents = await loadGeneratedSeedComponents();
-  const publicSeedComponents = [...preservedSeedComponents, ...generatedSeedComponents];
+  const publicSeedComponents = preservedSeedComponents;
 
   for (const category of categories) {
     const created = await prisma.category.create({

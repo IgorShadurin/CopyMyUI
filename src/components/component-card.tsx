@@ -34,17 +34,8 @@ export async function ComponentCard({
   const previewSource = component.screenshots.find((screenshot) => !isVideoMedia(screenshot));
   const previewWidth = previewSource?.width ?? 0;
   const previewHeight = previewSource?.height ?? 0;
-  const previewAspectRatio = previewWidth > 0 && previewHeight > 0 ? previewWidth / previewHeight : null;
   const isLandscapePreview = previewWidth > previewHeight;
-  const isPortraitPreview = previewHeight > previewWidth;
-  const forcePortraitCrop = component.slug === "audio-trimmer";
-  const shouldApplyPortraitCrop = isPortraitPreview || forcePortraitCrop;
-  const portraitScaleX =
-    shouldApplyPortraitCrop && previewAspectRatio
-      ? Math.min(1.42, Math.max(1.24, 0.72 / previewAspectRatio))
-      : shouldApplyPortraitCrop
-        ? 1.42
-        : 1;
+  const previewScale = 1.2;
 
   return (
     <div
@@ -70,7 +61,7 @@ export async function ComponentCard({
               className="size-full object-cover"
               style={{
                 objectPosition: isLandscapePreview ? "left top" : "center",
-                transform: shouldApplyPortraitCrop ? `scaleX(${portraitScaleX})` : "none",
+                transform: `scale(${previewScale})`,
                 transformOrigin: "center center",
               }}
             />
