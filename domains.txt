@@ -1,2 +1,1 @@
-https://copymyui.com
-https://*.copymyui.com
+https://copymyui.com,https://*.copymyui.com
