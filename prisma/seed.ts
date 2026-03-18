@@ -123,6 +123,24 @@ type SeedComponent = {
   ownerIdOverride?: string;
 };
 
+type PortManifestItem = {
+  slug: string;
+  title: string;
+  summary: string;
+  description: string;
+  changelog: string;
+  categoryName: CategoryName;
+  featured: boolean;
+  seed: number;
+  pattern: SeedPattern;
+  folderName: string;
+  screenshots: {
+    lightPath: string;
+    darkPath: string;
+  };
+  swiftFile: string;
+};
+
 const sampleComponents: SeedComponent[] = [
   {
     slug: "aurora-tab-orbit",
@@ -474,6 +492,77 @@ const sampleComponents: SeedComponent[] = [
     pattern: "videoSpotlight",
   },
 ] as const;
+
+async function loadPortComponentsFromSeedManifests() {
+  const directory = path.join(process.cwd(), "prisma", "seed-code");
+  let entries: Array<{ name: string; isFile: () => boolean }> = [];
+
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch {
+    return [] as SeedComponent[];
+  }
+
+  const manifestFiles = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith("-port-components.json"))
+    .map((entry) => entry.name)
+    .sort((a, b) => a.localeCompare(b));
+
+  const components: SeedComponent[] = [];
+
+  for (const fileName of manifestFiles) {
+    let manifest: PortManifestItem[];
+    try {
+      const rawManifest = await readFile(path.join(directory, fileName), "utf8");
+      manifest = JSON.parse(rawManifest) as PortManifestItem[];
+    } catch {
+      continue;
+    }
+
+    for (const item of manifest) {
+      const lightDimensions = await getImageDimensionsFromPublicPath(item.screenshots.lightPath);
+      const darkDimensions = await getImageDimensionsFromPublicPath(item.screenshots.darkPath);
+
+      components.push({
+        slug: item.slug,
+        title: item.title,
+        summary: item.summary,
+        description: item.description,
+        changelog: item.changelog,
+        categoryName: item.categoryName,
+        featured: item.featured,
+        seed: item.seed,
+        pattern: item.pattern,
+        screenshotsOverride: [
+          {
+            mediaType: "IMAGE",
+            mimeType: "image/png",
+            url: `/${item.screenshots.lightPath}`,
+            storagePath: item.screenshots.lightPath,
+            previewUrl: `/${item.screenshots.lightPath}`,
+            previewStoragePath: item.screenshots.lightPath,
+            width: lightDimensions.width,
+            height: lightDimensions.height,
+            altText: `${item.title} light appearance`,
+          },
+          {
+            mediaType: "IMAGE",
+            mimeType: "image/png",
+            url: `/${item.screenshots.darkPath}`,
+            storagePath: item.screenshots.darkPath,
+            previewUrl: `/${item.screenshots.darkPath}`,
+            previewStoragePath: item.screenshots.darkPath,
+            width: darkDimensions.width,
+            height: darkDimensions.height,
+            altText: `${item.title} dark appearance`,
+          },
+        ],
+      });
+    }
+  }
+
+  return components;
+}
 
 const relatedCategoryNamesBySlug = new Map<string, CategoryName[]>([
   ["harbor-metrics-deck", ["Commerce", "Paywall"]],
@@ -2184,6 +2273,26 @@ async function cleanupSeedScreenshotAssets() {
   );
 }
 
+async function loadSeedCodeBySlug() {
+  const directory = path.join(process.cwd(), "prisma", "seed-code");
+  const entries = await readdir(directory, { withFileTypes: true });
+  const codeBySlug = new Map<string, string>();
+
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (!entry.isFile() || !entry.name.endsWith(".swift")) {
+        return;
+      }
+
+      const slug = entry.name.replace(/\.swift$/, "");
+      const source = await readFile(path.join(directory, entry.name), "utf8");
+      codeBySlug.set(slug, source);
+    })
+  );
+
+  return codeBySlug;
+}
+
 async function main() {
   await cleanupSeedScreenshotAssets();
 
@@ -2205,14 +2314,8 @@ async function main() {
   ]);
 
   const categoryByName = new Map<string, { id: string; accent: string }>();
-  const audioTrimmerSwiftCode = await readFile(
-    path.join(process.cwd(), "prisma", "seed-code", "audio-trimmer.swift"),
-    "utf8"
-  );
-  const revenueCardSwiftCode = await readFile(
-    path.join(process.cwd(), "prisma", "seed-code", "revenue-card.swift"),
-    "utf8"
-  );
+  const seedCodeBySlug = await loadSeedCodeBySlug();
+  const portComponents = await loadPortComponentsFromSeedManifests();
   const audioTrimmerImageDimensions = await getImageDimensionsFromPublicPath(
     "seed-screenshots/audio-trimmer-full.jpg"
   );
@@ -2225,10 +2328,17 @@ async function main() {
   const audioTrimmerVideoDimensions = await getVideoDimensionsFromPublicPath(
     "seed-videos/audio-trimmer.mp4"
   );
-  const preservedSeedComponentSlugs = new Set(["audio-trimmer", "revenue-card"]);
-  const preservedSeedComponents = sampleComponents.filter(
-    (component) => preservedSeedComponentSlugs.has(component.slug)
-  );
+  const preservedSeedComponentSlugs = new Set([
+    "audio-trimmer",
+    "revenue-card",
+    ...portComponents.map((component) => component.slug),
+  ]);
+  const preservedSeedComponents = [
+    ...sampleComponents.filter((component) =>
+      preservedSeedComponentSlugs.has(component.slug)
+    ),
+    ...portComponents,
+  ];
   const publicSeedComponents = preservedSeedComponents;
 
   for (const category of categories) {
@@ -2384,11 +2494,8 @@ async function main() {
         description: component.description,
         swiftCode:
           component.swiftCodeOverride ??
-          (component.slug === "audio-trimmer"
-            ? audioTrimmerSwiftCode
-            : component.slug === "revenue-card"
-              ? revenueCardSwiftCode
-            : swiftCodeSnippet(component)),
+          seedCodeBySlug.get(component.slug) ??
+          swiftCodeSnippet(component),
         changelog: component.changelog,
         accessType,
         sellerTargetPriceCents,

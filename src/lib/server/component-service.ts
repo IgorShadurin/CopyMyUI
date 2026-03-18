@@ -526,7 +526,7 @@ export async function getHomepageData(viewerId?: string | null) {
         approvedRevisionId: { not: null },
       },
       orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
-      take: 8,
+      take: 12,
       include: listInclude,
     }),
     prisma.component.findMany({

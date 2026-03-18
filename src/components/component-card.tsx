@@ -32,10 +32,7 @@ export async function ComponentCard({
 }) {
   const { locale, messages } = await getI18n();
   const previewSource = component.screenshots.find((screenshot) => !isVideoMedia(screenshot));
-  const previewWidth = previewSource?.width ?? 0;
-  const previewHeight = previewSource?.height ?? 0;
-  const isLandscapePreview = previewWidth > previewHeight;
-  const previewScale = 1.2;
+  const hasPreview = Boolean(previewSource);
 
   return (
     <div
@@ -46,25 +43,22 @@ export async function ComponentCard({
         <Link
           href={withLocalePath(locale, `/components/${component.slug}`)}
           aria-label={component.title}
-          className="relative block aspect-[3/4] w-full overflow-hidden rounded-[12px] border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          className="relative block aspect-square w-full overflow-hidden rounded-[12px] border border-black/10 bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           style={{
             boxShadow: "0 1px 3px rgba(0, 0, 0, 0.07)",
           }}
         >
-          {component.previewImage ? (
-            <Image
-              src={component.previewImage}
-              alt={component.title}
-              width={1080}
-              height={1920}
-              unoptimized
-              className="size-full object-cover"
-              style={{
-                objectPosition: isLandscapePreview ? "left top" : "center",
-                transform: `scale(${previewScale})`,
-                transformOrigin: "center center",
-              }}
-            />
+          {component.previewImage && hasPreview ? (
+            <div className="size-full p-2">
+              <Image
+                src={component.previewImage}
+                alt={component.title}
+                width={1080}
+                height={1920}
+                unoptimized
+                className="size-full object-contain"
+              />
+            </div>
           ) : (
             <div className="flex size-full items-center justify-center border border-dashed border-black/10 bg-white/70 text-sm text-muted-foreground">
               {messages.componentCard.screenshotComingSoon}
