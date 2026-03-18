@@ -178,6 +178,15 @@ export function LocaleSwitcher({
               type="text"
               value={localeQuery}
               onChange={(event) => setLocaleQuery(event.target.value)}
+              onKeyDown={(event) => {
+                event.stopPropagation();
+              }}
+              onKeyUp={(event) => {
+                event.stopPropagation();
+              }}
+              onKeyPress={(event) => {
+                event.stopPropagation();
+              }}
               placeholder="Search language..."
               className="h-9 w-full rounded-lg border border-black/10 bg-white/90 px-2.5 text-sm outline-none ring-0 transition focus:border-black/25"
             />
