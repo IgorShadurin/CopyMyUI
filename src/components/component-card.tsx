@@ -33,15 +33,19 @@ export async function ComponentCard({
   const { locale, messages } = await getI18n();
   const previewSource = component.screenshots.find((screenshot) => !isVideoMedia(screenshot));
   const hasPreview = Boolean(previewSource);
+  const componentHref = withLocalePath(locale, `/components/${component.slug}`);
+  const creatorHref = component.owner.profileSlug
+    ? withLocalePath(locale, `/creators/${component.owner.profileSlug}`)
+    : null;
 
   return (
     <div
       data-testid={`component-card-${component.slug}`}
       className="group/card w-full overflow-hidden rounded-[14px]"
     >
-      <div className="w-full translate-y-[18px] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:translate-y-0 group-focus-within/card:translate-y-0">
+      <div className="w-full translate-y-[10px] transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:translate-y-0 group-focus-within/card:translate-y-0">
         <Link
-          href={withLocalePath(locale, `/components/${component.slug}`)}
+          href={componentHref}
           aria-label={component.title}
           className="relative block aspect-square w-full overflow-hidden rounded-[12px] border border-black/10 bg-black/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
           style={{
@@ -66,24 +70,48 @@ export async function ComponentCard({
           )}
         </Link>
 
-        <div className="flex w-full translate-y-[30px] items-center gap-2 px-1 pt-3 transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:translate-y-0 group-focus-within/card:translate-y-0">
-          <Avatar
-            size="sm"
-            className="size-[18px] shrink-0 rounded-[30%] shadow-[0_0.5px_1px_rgba(0,0,0,0.25),inset_0_-3px_4px_rgba(0,0,0,0.02)] after:border-black/10"
-          >
-            <AvatarImage
-              src={component.owner.image ?? undefined}
-              alt={component.owner.name ?? messages.common.creator}
-              className="rounded-[30%]"
-            />
-            <AvatarFallback className="rounded-[30%] text-[10px]">
-              {initials(component.owner.name)}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex w-full translate-y-[18px] items-center gap-1.5 px-0.5 pt-2 transition-transform duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover/card:translate-y-0 group-focus-within/card:translate-y-0">
+          {creatorHref ? (
+            <Link
+              href={creatorHref}
+              className="shrink-0 rounded-[30%] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
+              <Avatar
+                size="sm"
+                className="size-4 rounded-[30%] shadow-[0_0.5px_1px_rgba(0,0,0,0.25),inset_0_-3px_4px_rgba(0,0,0,0.02)] after:border-black/10"
+              >
+                <AvatarImage
+                  src={component.owner.image ?? undefined}
+                  alt={component.owner.name ?? messages.common.creator}
+                  className="rounded-[30%]"
+                />
+                <AvatarFallback className="rounded-[30%] text-[10px]">
+                  {initials(component.owner.name)}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Avatar
+              size="sm"
+              className="size-4 shrink-0 rounded-[30%] shadow-[0_0.5px_1px_rgba(0,0,0,0.25),inset_0_-3px_4px_rgba(0,0,0,0.02)] after:border-black/10"
+            >
+              <AvatarImage
+                src={component.owner.image ?? undefined}
+                alt={component.owner.name ?? messages.common.creator}
+                className="rounded-[30%]"
+              />
+              <AvatarFallback className="rounded-[30%] text-[10px]">
+                {initials(component.owner.name)}
+              </AvatarFallback>
+            </Avatar>
+          )}
 
-          <p className="min-w-0 truncate text-[13px] leading-[18px] font-medium text-foreground/80">
+          <Link
+            href={componentHref}
+            className="min-w-0 flex-1 truncate text-xs leading-[16px] font-medium text-foreground/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
             {component.title}
-          </p>
+          </Link>
 
           {showFavorite ? (
             <div className="ml-auto shrink-0">

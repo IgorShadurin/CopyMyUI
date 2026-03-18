@@ -2375,6 +2375,7 @@ async function main() {
   const moderatorId = users.get("moderator@copymyui.dev")!.id;
   const adminId = users.get("admin@copymyui.dev")!.id;
   const fanId = users.get("fan@copymyui.dev")!.id;
+  const publishedOwnerId = creatorId;
 
   await prisma.platformConfig.create({
     data: {
@@ -2454,12 +2455,7 @@ async function main() {
       (sellerTargetPriceCents !== null
         ? ComponentAccessType.PREMIUM
         : ComponentAccessType.FREE);
-    const ownerId =
-      component.ownerIdOverride ??
-      (component.categoryName === "Social" ||
-      component.categoryName === "Media"
-        ? fanId
-        : creatorId);
+    const ownerId = publishedOwnerId;
 
     const categoryIds = [
       category.id,

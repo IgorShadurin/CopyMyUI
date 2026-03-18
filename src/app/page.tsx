@@ -84,7 +84,7 @@ export default async function Home() {
                   </span>
                 </Link>
               </div>
-              <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {homepage.topRated.map((component) => (
                   <ComponentCard key={component.id} component={component} />
                 ))}
@@ -142,7 +142,7 @@ export default async function Home() {
                 </span>
               </Link>
             </div>
-            <div className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               {homepage.newest.map((component) => (
                 <ComponentCard key={component.id} component={component} />
               ))}

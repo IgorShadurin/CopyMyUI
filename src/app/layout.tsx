@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Instrument_Serif, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -81,6 +82,20 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} className="light">
+      <head>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-2YDTMJPGMQ"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-2YDTMJPGMQ');
+          `}
+        </Script>
+      </head>
       <body
         className={`${sans.variable} ${mono.variable} ${display.variable} min-h-screen bg-background text-foreground antialiased`}
       >

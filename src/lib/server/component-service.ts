@@ -526,7 +526,7 @@ export async function getHomepageData(viewerId?: string | null) {
         approvedRevisionId: { not: null },
       },
       orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
-      take: 12,
+      take: 15,
       include: listInclude,
     }),
     prisma.component.findMany({
@@ -534,7 +534,7 @@ export async function getHomepageData(viewerId?: string | null) {
         approvedRevisionId: { not: null },
       },
       orderBy: [{ publishedAt: "desc" }, { favoritesCount: "desc" }],
-      take: 4,
+      take: 10,
       include: listInclude,
     }),
     prisma.category.findMany({

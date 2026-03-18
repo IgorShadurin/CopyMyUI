@@ -1,0 +1,44 @@
+# CopyMyUI
+
+> CopyMyUI is a moderated marketplace of reusable SwiftUI UI components, with screenshots, source code access (free or premium), categories, creator profiles, favorites, and API-key-based endpoints.
+
+Use locale-prefixed paths for user-facing pages: `/en`, `/es`, `/ru`, `/de`.
+
+Most data pages are public for reading, but user-specific pages and write operations require authentication. Some areas require moderator/admin roles.
+
+## Public Pages
+
+- [Home](/en): Main landing page with featured rails (most favorited, category leaders, newest).
+- [Explore Components](/en/components): Searchable/browsable public component catalog.
+- [Component Details](/en/components/{slug}): Component screenshots, metadata, and source/purchase state.
+- [Category Page](/en/categories/{slug}): Components filtered by category.
+- [Creator Profile](/en/creators/{profileSlug}): Public creator profile and their published components.
+
+## User Library Pages
+
+- [Favorites](/en/favorites): Signed-in user's saved components.
+- [Purchases](/en/purchases): Signed-in user's unlocked premium components.
+
+## Creator and Operations Pages
+
+- [Creator Dashboard](/en/dashboard): Manage creator submissions and statuses.
+- [New Component Draft](/en/dashboard/components/new): Start a new component submission.
+- [API Keys Dashboard](/en/dashboard/api-keys): Create/manage personal API keys for v1 endpoints.
+- [Moderation](/en/moderation): Moderator review queue and decisions.
+- [Admin](/en/admin): Admin controls and system management.
+- [Admin Components](/en/admin/components): Admin component-level controls.
+
+## API v1 (API key required)
+
+- [Search Components](/api/v1/search?q=button): Search public components. Optional params include `category`, `access`, and `sort`.
+- [My Favorites](/api/v1/favorites): Returns the authenticated user's favorites.
+- [My Profile and API Key Context](/api/v1/me): Returns authenticated user summary and API key permissions.
+
+## Authentication and Sessions
+
+- [Sign In](/en/auth/signin): User sign-in page.
+- [Auth Routes](/api/auth/[...nextauth]): Authentication handler routes.
+
+## Optional
+
+- [GitHub Repository](https://github.com/IgorShadurin/CopyMyUI): Project source code and development history.
