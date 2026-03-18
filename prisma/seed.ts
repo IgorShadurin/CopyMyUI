@@ -210,6 +210,18 @@ const sampleComponents: SeedComponent[] = [
     pattern: "audioShelf",
   },
   {
+    slug: "revenue-card",
+    title: "Revenue Trend Card",
+    summary: "A compact revenue card with 30-day trend chart and growth indicator.",
+    description:
+      "Revenue Trend Card is a reusable dashboard component for analytics surfaces. It highlights headline revenue, 30-day movement, and a smooth trend chart in a compact card tuned for both light and dark contexts.",
+    changelog: "Seeded from the research capture set with framed light and dark screenshots.",
+    categoryName: "Dashboards",
+    featured: false,
+    seed: 29,
+    pattern: "metricsDeck",
+  },
+  {
     slug: "atlas-sidebar-flow",
     title: "Atlas Sidebar Flow",
     summary: "A compact sidebar shell with floating sections, active chips, and roomy content framing.",
@@ -2197,14 +2209,25 @@ async function main() {
     path.join(process.cwd(), "prisma", "seed-code", "audio-trimmer.swift"),
     "utf8"
   );
+  const revenueCardSwiftCode = await readFile(
+    path.join(process.cwd(), "prisma", "seed-code", "revenue-card.swift"),
+    "utf8"
+  );
   const audioTrimmerImageDimensions = await getImageDimensionsFromPublicPath(
     "seed-screenshots/audio-trimmer-full.jpg"
+  );
+  const revenueCardLightDimensions = await getImageDimensionsFromPublicPath(
+    "components/001-revenue-card/light.png"
+  );
+  const revenueCardDarkDimensions = await getImageDimensionsFromPublicPath(
+    "components/001-revenue-card/dark.png"
   );
   const audioTrimmerVideoDimensions = await getVideoDimensionsFromPublicPath(
     "seed-videos/audio-trimmer.mp4"
   );
+  const preservedSeedComponentSlugs = new Set(["audio-trimmer", "revenue-card"]);
   const preservedSeedComponents = sampleComponents.filter(
-    (component) => component.slug === "audio-trimmer"
+    (component) => preservedSeedComponentSlugs.has(component.slug)
   );
   const publicSeedComponents = preservedSeedComponents;
 
@@ -2280,6 +2303,31 @@ async function main() {
               altText: "Audio Trimmer demo video",
             },
           ]
+        : component.slug === "revenue-card"
+          ? [
+              {
+                mediaType: "IMAGE" as const,
+                mimeType: "image/png",
+                url: "/components/001-revenue-card/light.png",
+                storagePath: "components/001-revenue-card/light.png",
+                previewUrl: "/components/001-revenue-card/light.png",
+                previewStoragePath: "components/001-revenue-card/light.png",
+                width: revenueCardLightDimensions.width,
+                height: revenueCardLightDimensions.height,
+                altText: "Revenue Trend Card light appearance",
+              },
+              {
+                mediaType: "IMAGE" as const,
+                mimeType: "image/png",
+                url: "/components/001-revenue-card/dark.png",
+                storagePath: "components/001-revenue-card/dark.png",
+                previewUrl: "/components/001-revenue-card/dark.png",
+                previewStoragePath: "components/001-revenue-card/dark.png",
+                width: revenueCardDarkDimensions.width,
+                height: revenueCardDarkDimensions.height,
+                altText: "Revenue Trend Card dark appearance",
+              },
+            ]
         : [
             await createScreenshotAsset(
               component.slug,
@@ -2338,6 +2386,8 @@ async function main() {
           component.swiftCodeOverride ??
           (component.slug === "audio-trimmer"
             ? audioTrimmerSwiftCode
+            : component.slug === "revenue-card"
+              ? revenueCardSwiftCode
             : swiftCodeSnippet(component)),
         changelog: component.changelog,
         accessType,
