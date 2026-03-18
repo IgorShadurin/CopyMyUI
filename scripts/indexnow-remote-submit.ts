@@ -1,9 +1,7 @@
 import "dotenv/config";
 
-import { defaultLocale, locales, type AppLocale } from "../src/i18n/config";
+import { fullyTranslatedLocales, locales, type AppLocale } from "../src/i18n/config";
 import { isLocalDebugHost } from "../src/i18n/routing";
-
-const MAX_URLS_PER_REQUEST = 10_000;
 
 function parseArgs(argv: string[]) {
   const args = new Map<string, string>();
@@ -60,7 +58,7 @@ Options:
   --langs=<c1,c2>       Submit a comma-separated locale list, for example --langs=ru,de,fr
   --endpoint=<url>      Remote API endpoint. Default: INDEXNOW_REMOTE_API_URL or https://copymyui.com/api/indexnow
   --secret=<value>      Overrides INDEXNOW_SUBMIT_SECRET for this run.
-  --one-by-one          Force per-URL submission.
+  --one-by-one          Force locale-by-locale remote requests.
   --dry-run             Print plan without sending anything.
   --help                Show this message.
 
@@ -72,22 +70,6 @@ Examples:
 }
 
 const localeSet = new Set<AppLocale>(locales);
-
-function inferLocaleFromUrl(urlValue: string): AppLocale {
-  const url = new URL(urlValue);
-  const pathnameLocale = url.pathname.split("/")[1]?.toLowerCase();
-
-  if (pathnameLocale && localeSet.has(pathnameLocale as AppLocale)) {
-    return pathnameLocale as AppLocale;
-  }
-
-  const hostLocale = url.hostname.split(".")[0]?.toLowerCase();
-  if (hostLocale && localeSet.has(hostLocale as AppLocale)) {
-    return hostLocale as AppLocale;
-  }
-
-  return defaultLocale;
-}
 
 function normalizeLocaleSelection(args: Map<string, string>) {
   const requested = [
@@ -107,23 +89,6 @@ function normalizeLocaleSelection(args: Map<string, string>) {
   }
 
   return Array.from(new Set(requested)) as AppLocale[];
-}
-
-async function fetchSitemapUrls(origin: string) {
-  const sitemapUrl = new URL("/sitemap.xml", origin).toString();
-  const response = await fetch(sitemapUrl, { cache: "no-store" });
-
-  if (!response.ok) {
-    throw new Error(`Unable to fetch sitemap: ${response.status} ${response.statusText}`);
-  }
-
-  const xml = await response.text();
-  const matches = Array.from(xml.matchAll(/<loc>([^<]+)<\/loc>/g));
-  const urls = matches
-    .map((match) => match[1]?.trim())
-    .filter((value): value is string => Boolean(value));
-
-  return Array.from(new Set(urls));
 }
 
 async function submitPayload(
@@ -151,6 +116,21 @@ async function submitPayload(
   } catch {
     return { ok: true, raw: body };
   }
+}
+
+function getNumberValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
 }
 
 async function main() {
@@ -182,93 +162,50 @@ async function main() {
   const dryRun = args.get("dry-run") === "true";
   const forceOneByOne = args.get("one-by-one") === "true";
 
-  const sitemapUrls = await fetchSitemapUrls(endpointUrl.origin);
-
-  if (sitemapUrls.length === 0) {
-    console.log("No sitemap URLs found. Nothing to submit.");
-    return;
-  }
-
-  const filteredUrls =
-    requestedLocales.length === 0
-      ? sitemapUrls
-      : sitemapUrls.filter((url) => requestedLocales.includes(inferLocaleFromUrl(url)));
-
-  if (filteredUrls.length === 0) {
-    console.log("No URLs matched the selected locale filter.");
-    return;
-  }
-
-  const groupedByLocale = new Map<AppLocale, string[]>();
-
-  for (const url of filteredUrls) {
-    const locale = inferLocaleFromUrl(url);
-    const group = groupedByLocale.get(locale);
-
-    if (group) {
-      group.push(url);
-      continue;
-    }
-
-    groupedByLocale.set(locale, [url]);
-  }
-
-  const localeSummary = Array.from(groupedByLocale.entries())
-    .map(([locale, urls]) => `${locale}:${urls.length}`)
-    .join(", ");
-
   console.log(`Endpoint: ${endpoint}`);
   console.log(
     requestedLocales.length === 0
       ? "Locale mode: all locales"
       : `Locale mode: ${requestedLocales.join(", ")}`
   );
-  console.log(`Matched URLs: ${filteredUrls.length}`);
-  console.log(`Locale breakdown: ${localeSummary}`);
 
-  const canSubmitOneShot = filteredUrls.length <= MAX_URLS_PER_REQUEST && !forceOneByOne;
+  if (!forceOneByOne) {
+    const payload =
+      requestedLocales.length === 0
+        ? { submitAll: true }
+        : { locales: requestedLocales };
 
-  if (canSubmitOneShot) {
-    console.log("Submission strategy: single remote request with urlList.");
+    console.log("Submission strategy: single remote request (server-side URL discovery).");
+    console.log(`Payload: ${JSON.stringify(payload)}`);
 
     if (dryRun) {
       return;
     }
 
-    const result = await submitPayload(endpoint, secret, {
-      urlList: filteredUrls,
-      locales: requestedLocales.length > 0 ? requestedLocales : undefined,
-    });
-
+    const result = await submitPayload(endpoint, secret, payload);
     console.log(JSON.stringify(result, null, 2));
     return;
   }
 
+  const localesToProcess =
+    requestedLocales.length > 0 ? requestedLocales : fullyTranslatedLocales;
+
   console.log(
-    `Submission strategy: locale-by-locale, one URL per request (total ${filteredUrls.length} requests).`
+    `Submission strategy: locale-by-locale remote requests (${localesToProcess.length} locale request(s)).`
   );
+  console.log(`Locales: ${localesToProcess.join(", ")}`);
 
   if (dryRun) {
     return;
   }
 
   let submitted = 0;
-  const localesToProcess =
-    requestedLocales.length > 0 ? requestedLocales : Array.from(groupedByLocale.keys()).sort();
 
   for (const locale of localesToProcess) {
-    const urls = groupedByLocale.get(locale) ?? [];
-
-    console.log(`Submitting locale ${locale}: ${urls.length} URL(s)`);
-
-    for (const url of urls) {
-      await submitPayload(endpoint, secret, { url, locale });
-      submitted += 1;
-
-      if (submitted % 50 === 0 || submitted === filteredUrls.length) {
-        console.log(`Progress: ${submitted}/${filteredUrls.length}`);
-      }
-    }
+    const result = await submitPayload(endpoint, secret, { locale });
+    const localeSubmitted = getNumberValue(result.submittedCount);
+    submitted += localeSubmitted;
+    console.log(`Locale ${locale}: submitted ${localeSubmitted} URL(s).`);
   }
 
   console.log(`Done. Submitted ${submitted} URL(s).`);
