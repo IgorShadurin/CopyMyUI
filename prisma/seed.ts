@@ -24,6 +24,9 @@ const prisma = new PrismaClient({
   }),
 });
 const execFileAsync = promisify(execFile);
+const SEED_SUBMITTED_AT = new Date("2026-03-18T09:00:00.000Z");
+const SEED_REVIEWED_AT = new Date("2026-03-18T12:00:00.000Z");
+const isSafeSeedMode = process.argv.includes("--safe");
 
 const categories = [
   {
@@ -2294,24 +2297,26 @@ async function loadSeedCodeBySlug() {
 }
 
 async function main() {
-  await cleanupSeedScreenshotAssets();
+  if (!isSafeSeedMode) {
+    await cleanupSeedScreenshotAssets();
 
-  await prisma.$transaction([
-    prisma.platformConfig.deleteMany(),
-    prisma.componentPurchase.deleteMany(),
-    prisma.apiKey.deleteMany(),
-    prisma.moderationLog.deleteMany(),
-    prisma.favorite.deleteMany(),
-    prisma.revisionScreenshot.deleteMany(),
-    prisma.componentRevision.deleteMany(),
-    prisma.componentCategory.deleteMany(),
-    prisma.component.deleteMany(),
-    prisma.categoryTranslation.deleteMany(),
-    prisma.category.deleteMany(),
-    prisma.session.deleteMany(),
-    prisma.account.deleteMany(),
-    prisma.user.deleteMany(),
-  ]);
+    await prisma.$transaction([
+      prisma.platformConfig.deleteMany(),
+      prisma.componentPurchase.deleteMany(),
+      prisma.apiKey.deleteMany(),
+      prisma.moderationLog.deleteMany(),
+      prisma.favorite.deleteMany(),
+      prisma.revisionScreenshot.deleteMany(),
+      prisma.componentRevision.deleteMany(),
+      prisma.componentCategory.deleteMany(),
+      prisma.component.deleteMany(),
+      prisma.categoryTranslation.deleteMany(),
+      prisma.category.deleteMany(),
+      prisma.session.deleteMany(),
+      prisma.account.deleteMany(),
+      prisma.user.deleteMany(),
+    ]);
+  }
 
   const categoryByName = new Map<string, { id: string; accent: string }>();
   const seedCodeBySlug = await loadSeedCodeBySlug();
@@ -2342,24 +2347,60 @@ async function main() {
   const publicSeedComponents = preservedSeedComponents;
 
   for (const category of categories) {
-    const created = await prisma.category.create({
-      data: {
-        name: category.name,
-        slug: slugify(category.name, { lower: true, strict: true }),
-        description: category.description,
-        accent: category.accent,
-        translations: {
-          create: {
+    const categorySlug = slugify(category.name, { lower: true, strict: true });
+    const existing = isSafeSeedMode
+      ? await prisma.category.findFirst({
+          where: {
+            OR: [{ slug: categorySlug }, { name: category.name }],
+          },
+          select: { id: true },
+        })
+      : null;
+
+    const resolvedCategory =
+      existing ??
+      (await prisma.category.create({
+        data: {
+          name: category.name,
+          slug: categorySlug,
+          description: category.description,
+          accent: category.accent,
+          translations: {
+            create: {
+              locale: "en",
+              name: category.name,
+              description: category.description,
+            },
+          },
+        },
+        select: { id: true },
+      }));
+
+    if (isSafeSeedMode) {
+      const enTranslation = await prisma.categoryTranslation.findUnique({
+        where: {
+          categoryId_locale: {
+            categoryId: resolvedCategory.id,
+            locale: "en",
+          },
+        },
+        select: { id: true },
+      });
+
+      if (!enTranslation) {
+        await prisma.categoryTranslation.create({
+          data: {
+            categoryId: resolvedCategory.id,
             locale: "en",
             name: category.name,
             description: category.description,
           },
-        },
-      },
-    });
+        });
+      }
+    }
 
     categoryByName.set(category.name, {
-      id: created.id,
+      id: resolvedCategory.id,
       accent: accentHexByCategory.get(category.name) ?? "#F59E0B",
     });
   }
@@ -2367,8 +2408,16 @@ async function main() {
   const users = new Map<string, { id: string; role: UserRole }>();
 
   for (const user of demoUsers) {
-    const created = await prisma.user.create({ data: user });
-    users.set(user.email, { id: created.id, role: created.role });
+    const existing = isSafeSeedMode
+      ? await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { id: true, role: true },
+        })
+      : null;
+
+    const resolvedUser =
+      existing ?? (await prisma.user.create({ data: user, select: { id: true, role: true } }));
+    users.set(user.email, { id: resolvedUser.id, role: resolvedUser.role });
   }
 
   const creatorId = users.get("creator@copymyui.dev")!.id;
@@ -2377,15 +2426,45 @@ async function main() {
   const fanId = users.get("fan@copymyui.dev")!.id;
   const publishedOwnerId = creatorId;
 
-  await prisma.platformConfig.create({
-    data: {
-      id: 1,
-      premiumMarkupPercent: 35,
-      updatedById: adminId,
-    },
-  });
+  if (!isSafeSeedMode) {
+    await prisma.platformConfig.create({
+      data: {
+        id: 1,
+        premiumMarkupPercent: 35,
+        updatedById: adminId,
+      },
+    });
+  } else {
+    const existingPlatformConfig = await prisma.platformConfig.findUnique({
+      where: { id: 1 },
+      select: { id: true },
+    });
+
+    if (!existingPlatformConfig) {
+      await prisma.platformConfig.create({
+        data: {
+          id: 1,
+          premiumMarkupPercent: 35,
+          updatedById: adminId,
+        },
+      });
+    }
+  }
+
+  const createdComponentIds: string[] = [];
 
   for (const component of publicSeedComponents) {
+    if (isSafeSeedMode) {
+      const existingComponent = await prisma.component.findUnique({
+        where: { slug: component.slug },
+        select: { id: true },
+      });
+
+      if (existingComponent) {
+        continue;
+      }
+    }
+
     const category = categoryByName.get(component.categoryName)!;
     const screenshots =
       component.screenshotsOverride ??
@@ -2480,6 +2559,7 @@ async function main() {
         },
       },
     });
+    createdComponentIds.push(createdComponent.id);
 
     const approvedRevision = await prisma.componentRevision.create({
       data: {
@@ -2496,8 +2576,8 @@ async function main() {
         accessType,
         sellerTargetPriceCents,
         status: ComponentStatus.APPROVED,
-        submittedAt: new Date(Date.now() - component.seed * 86400000),
-        reviewedAt: new Date(Date.now() - component.seed * 64800000),
+        submittedAt: new Date(SEED_SUBMITTED_AT),
+        reviewedAt: new Date(SEED_REVIEWED_AT),
         reviewerId: moderatorId,
         reviewNote: "Approved for the public gallery.",
         screenshots: {
@@ -2537,7 +2617,15 @@ async function main() {
     }
   }
 
-  const publicComponents = await prisma.component.findMany();
+  const publicComponents = isSafeSeedMode
+    ? await prisma.component.findMany({
+        where: {
+          id: {
+            in: createdComponentIds,
+          },
+        },
+      })
+    : await prisma.component.findMany();
 
   for (const component of publicComponents) {
     const favoritesCount = await prisma.favorite.count({

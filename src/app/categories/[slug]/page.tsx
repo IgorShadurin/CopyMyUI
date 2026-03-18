@@ -18,11 +18,11 @@ import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
-import { listCategories } from "@/lib/server/component-service";
+import { listBrowseRailCategories } from "@/lib/server/component-service";
 import { getPublicCategoryPageData } from "@/lib/server/category-service";
 import { getViewer } from "@/lib/viewer";
 
-const CATEGORY_PAGE_SIZE = 8;
+const CATEGORY_PAGE_SIZE = 15;
 
 function parsePageParam(pageValue: string | undefined) {
   if (!pageValue) {
@@ -116,8 +116,8 @@ export default async function CategoryPage({
   const { slug } = await params;
   const query = await searchParams;
   const requestedPage = parsePageParam(query.page);
-  const [categories, categoryPage] = await Promise.all([
-    listCategories(),
+  const [browseRailData, categoryPage] = await Promise.all([
+    listBrowseRailCategories(),
     getPublicCategoryPageData(slug, viewer?.id, {
       page: requestedPage,
       pageSize: CATEGORY_PAGE_SIZE,
@@ -136,14 +136,15 @@ export default async function CategoryPage({
         <BrowseRail
           locale={locale}
           messages={messages}
-          categories={categories}
+          categories={browseRailData.categories}
+          totalPublicComponents={browseRailData.totalPublicComponents}
           viewer={viewer}
           activeCategorySlug={slug}
           categoryLinkMode="pages"
         />
 
-        <div className="min-w-0 space-y-6">
-          <section className="rounded-[2rem] border border-black/6 bg-white/84 p-5 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-6">
+        <div className="min-w-0">
+          <section className="rounded-[2rem] border border-black/6 bg-white/84 p-4 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-5">
             <div className="rounded-[1.4rem] border border-black/8 bg-[rgba(252,251,247,0.98)] p-4 sm:p-5">
               <div className="max-w-3xl">
                 <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
@@ -158,101 +159,107 @@ export default async function CategoryPage({
                 </p>
               </div>
             </div>
-          </section>
 
-          {categoryPage.components.length > 0 ? (
-            <section className="rounded-[2rem] border border-black/6 bg-white/82 p-4 shadow-[0_18px_48px_-42px_rgba(22,18,12,0.2)] backdrop-blur sm:p-5">
-              <ComponentCardList components={categoryPage.components} />
-              {categoryPage.pagination.totalCount > 0 ? (
-                <div className="mt-5 border-t border-black/8 pt-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      {messages.categoryPage.approvedCount}:{" "}
-                      <span className="font-semibold text-foreground">
-                        {categoryPage.pagination.totalCount}
-                      </span>
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {categoryPage.pagination.totalPages > 1 ? (
-                        <Pagination className="w-auto">
-                          <PaginationContent>
-                            {categoryPage.pagination.currentPage > 1 ? (
-                              <PaginationItem>
-                                <PaginationPrevious
-                                  href={buildCategoryPageHref(
-                                    locale,
-                                    categoryPage.category.slug,
-                                    categoryPage.pagination.currentPage - 1
-                                  )}
-                                  aria-label={messages.categoryPage.paginationPrevious}
-                                >
-                                  {messages.categoryPage.paginationPrevious}
-                                </PaginationPrevious>
-                              </PaginationItem>
-                            ) : null}
-                            {getPaginationTokens(
-                              categoryPage.pagination.currentPage,
-                              categoryPage.pagination.totalPages
-                            ).map((token) => {
-                              if (typeof token !== "number") {
-                                return (
-                                  <PaginationItem key={token}>
-                                    <PaginationEllipsis />
-                                  </PaginationItem>
-                                );
-                              }
+            <hr className="mt-5 border-black/8" />
 
+            <div className="pt-4">
+              {categoryPage.components.length > 0 ? (
+              <ComponentCardList
+                components={categoryPage.components}
+                className="gap-4 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-5"
+              />
+              ) : (
+                <EmptyState
+                  eyebrow={messages.categoryPage.emptyEyebrow}
+                  title={messages.categoryPage.emptyTitle}
+                  description={messages.categoryPage.emptyDescription}
+                  actionHref={withLocalePath(locale, "/components")}
+                  actionLabel={messages.categoryPage.emptyAction}
+                />
+              )}
+            </div>
+
+            {categoryPage.pagination.totalCount > 0 ? (
+              <div className="mt-5 border-t border-black/8 pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {messages.categoryPage.approvedCount}:{" "}
+                    <span className="font-semibold text-foreground">
+                      {categoryPage.pagination.totalCount}
+                    </span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {categoryPage.pagination.totalPages > 1 ? (
+                      <Pagination className="w-auto">
+                        <PaginationContent>
+                          {categoryPage.pagination.currentPage > 1 ? (
+                            <PaginationItem>
+                              <PaginationPrevious
+                                href={buildCategoryPageHref(
+                                  locale,
+                                  categoryPage.category.slug,
+                                  categoryPage.pagination.currentPage - 1
+                                )}
+                                aria-label={messages.categoryPage.paginationPrevious}
+                              >
+                                {messages.categoryPage.paginationPrevious}
+                              </PaginationPrevious>
+                            </PaginationItem>
+                          ) : null}
+                          {getPaginationTokens(
+                            categoryPage.pagination.currentPage,
+                            categoryPage.pagination.totalPages
+                          ).map((token) => {
+                            if (typeof token !== "number") {
                               return (
                                 <PaginationItem key={token}>
-                                  <PaginationLink
-                                    href={buildCategoryPageHref(
-                                      locale,
-                                      categoryPage.category.slug,
-                                      token
-                                    )}
-                                    isActive={token === categoryPage.pagination.currentPage}
-                                    aria-label={`${messages.categoryPage.paginationPage} ${token}`}
-                                  >
-                                    {token}
-                                  </PaginationLink>
+                                  <PaginationEllipsis />
                                 </PaginationItem>
                               );
-                            })}
-                            {categoryPage.pagination.currentPage < categoryPage.pagination.totalPages ? (
-                              <PaginationItem>
-                                <PaginationNext
+                            }
+
+                            return (
+                              <PaginationItem key={token}>
+                                <PaginationLink
                                   href={buildCategoryPageHref(
                                     locale,
                                     categoryPage.category.slug,
-                                    categoryPage.pagination.currentPage + 1
+                                    token
                                   )}
-                                  aria-label={messages.categoryPage.paginationNext}
+                                  isActive={token === categoryPage.pagination.currentPage}
+                                  aria-label={`${messages.categoryPage.paginationPage} ${token}`}
                                 >
-                                  {messages.categoryPage.paginationNext}
-                                </PaginationNext>
+                                  {token}
+                                </PaginationLink>
                               </PaginationItem>
-                            ) : null}
-                          </PaginationContent>
-                        </Pagination>
-                      ) : (
-                        <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                          1 / 1
-                        </span>
-                      )}
-                    </div>
+                            );
+                          })}
+                          {categoryPage.pagination.currentPage < categoryPage.pagination.totalPages ? (
+                            <PaginationItem>
+                              <PaginationNext
+                                href={buildCategoryPageHref(
+                                  locale,
+                                  categoryPage.category.slug,
+                                  categoryPage.pagination.currentPage + 1
+                                )}
+                                aria-label={messages.categoryPage.paginationNext}
+                              >
+                                {messages.categoryPage.paginationNext}
+                              </PaginationNext>
+                            </PaginationItem>
+                          ) : null}
+                        </PaginationContent>
+                      </Pagination>
+                    ) : (
+                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                        1 / 1
+                      </span>
+                    )}
                   </div>
                 </div>
-              ) : null}
-            </section>
-          ) : (
-            <EmptyState
-              eyebrow={messages.categoryPage.emptyEyebrow}
-              title={messages.categoryPage.emptyTitle}
-              description={messages.categoryPage.emptyDescription}
-              actionHref={withLocalePath(locale, "/components")}
-              actionLabel={messages.categoryPage.emptyAction}
-            />
-          )}
+              </div>
+            ) : null}
+          </section>
         </div>
       </div>
     </main>

@@ -12,7 +12,10 @@ import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
 import { normalizeSearchQuery } from "@/lib/search";
-import { listCategories, listPublicComponents } from "@/lib/server/component-service";
+import {
+  listBrowseRailCategories,
+  listPublicComponents,
+} from "@/lib/server/component-service";
 import { cn } from "@/lib/utils";
 import { getViewer } from "@/lib/viewer";
 
@@ -94,8 +97,8 @@ export default async function ComponentsPage({
   const params = await searchParams;
   const normalizedQuery = normalizeSearchQuery(params.q);
   const viewer = await getViewer();
-  const [categories, components] = await Promise.all([
-    listCategories(),
+  const [browseRailData, components] = await Promise.all([
+    listBrowseRailCategories(),
     listPublicComponents(
         {
           query: normalizedQuery,
@@ -124,7 +127,9 @@ export default async function ComponentsPage({
     access: currentAccess,
     sort: currentSort as "top" | "newest",
   };
-  const activeCategory = categories.find((category) => category.slug === params.category);
+  const activeCategory = browseRailData.categories.find(
+    (category) => category.slug === params.category
+  );
   const premiumFilterHref = buildComponentsHref(locale, {
     ...listingBaseParams,
     access: "premium",
@@ -150,7 +155,8 @@ export default async function ComponentsPage({
         <BrowseRail
           locale={locale}
           messages={messages}
-          categories={categories}
+          categories={browseRailData.categories}
+          totalPublicComponents={browseRailData.totalPublicComponents}
           viewer={viewer}
           currentQuery={normalizedQuery}
           currentSort={currentSort}

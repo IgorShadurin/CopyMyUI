@@ -518,6 +518,44 @@ export async function listCategories() {
   });
 }
 
+export async function listBrowseRailCategories() {
+  const [categories, totalPublicComponents, categoryPublicCounts] = await Promise.all([
+    listCategories(),
+    prisma.component.count({
+      where: {
+        approvedRevisionId: {
+          not: null,
+        },
+      },
+    }),
+    prisma.componentCategory.groupBy({
+      by: ["categoryId"],
+      where: {
+        component: {
+          approvedRevisionId: {
+            not: null,
+          },
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
+  ]);
+
+  const countByCategoryId = new Map(
+    categoryPublicCounts.map((item) => [item.categoryId, item._count._all])
+  );
+
+  return {
+    categories: categories.map((category) => ({
+      ...category,
+      publicComponentCount: countByCategoryId.get(category.id) ?? 0,
+    })),
+    totalPublicComponents,
+  };
+}
+
 export async function getHomepageData(viewerId?: string | null) {
   const platformConfig = await getPlatformConfig();
   const [topRated, newest, categoryHighlights, premium] = await Promise.all([

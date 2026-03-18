@@ -38,11 +38,11 @@ export function ComponentMediaGallery({ items }: { items: MediaItem[] }) {
   }
 
   return (
-    <div className="relative">
+    <div className={cn("relative", items.length > 1 ? "pb-14 sm:pb-16" : "")}>
       <ComponentMediaPreview item={activeItem} className="max-w-[20rem] sm:max-w-[22rem]" />
 
       {items.length > 1 ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+        <div className="pointer-events-none absolute inset-x-0 bottom-1.5 flex justify-center sm:bottom-2">
           <div className="pointer-events-auto inline-flex items-center gap-4 rounded-full border border-black/10 bg-white/90 px-4 py-2 backdrop-blur">
             {items.map((item, index) => {
               const active = index === clampedActiveIndex;

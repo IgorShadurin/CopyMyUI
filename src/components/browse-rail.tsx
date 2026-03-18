@@ -23,6 +23,7 @@ type BrowseCategory = {
   slug: string;
   name: string;
   description: string;
+  publicComponentCount?: number;
   translations?: Array<{ locale: string; name: string; description: string }>;
 };
 
@@ -30,6 +31,7 @@ type BrowseRailProps = {
   locale: AppLocale;
   messages: Messages;
   categories: BrowseCategory[];
+  totalPublicComponents: number;
   viewer: Viewer | null;
   currentQuery?: string;
   currentSort?: "top" | "newest";
@@ -70,6 +72,7 @@ function BrowseRailContent({
   locale,
   messages,
   categories,
+  totalPublicComponents,
   currentQuery,
   currentSort = "top",
   currentAccess,
@@ -82,6 +85,16 @@ function BrowseRailContent({
 }) {
   const currentCategoryValue =
     categoryLinkMode === "filters" && activeCategorySlug ? activeCategorySlug : undefined;
+  const allCategoriesHref =
+    categoryLinkMode === "filters"
+      ? buildLocalizedHref(locale, "/components", {
+          q: currentQuery,
+          access: currentAccess,
+          sort: currentSort === "newest" ? "newest" : undefined,
+        })
+      : withLocalePath(locale, "/components");
+  const allCategoriesActive =
+    categoryLinkMode === "filters" ? !activeCategorySlug : false;
 
   return (
     <div
@@ -147,10 +160,27 @@ function BrowseRailContent({
       </form>
 
       <div className="mt-4 border-t border-black/6 pt-4">
-        <p className="px-3 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-          {messages.explorePage.allCategories}
-        </p>
         <div className="mt-2 grid gap-1">
+          <Link
+            href={allCategoriesHref}
+            data-active={allCategoriesActive ? "true" : "false"}
+            data-testid={`browse-category-link-${panelId}-all`}
+            className={railLinkClass(allCategoriesActive)}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Compass className="size-4" />
+              <span>{messages.explorePage.allCategories}</span>
+              <span
+                className={cn(
+                  "text-xs",
+                  allCategoriesActive ? "text-background/70" : "text-muted-foreground/75"
+                )}
+              >
+                ({totalPublicComponents})
+              </span>
+            </span>
+            <ChevronRight className="size-4 opacity-55" />
+          </Link>
           {categories.map((category) => {
             const translatedCategory = translateCategory(category, messages, locale);
             const href =
@@ -175,6 +205,14 @@ function BrowseRailContent({
                 <span className="inline-flex items-center gap-2">
                   <CategoryIcon slug={category.slug} className="size-4" />
                   <span>{translatedCategory.name}</span>
+                  <span
+                    className={cn(
+                      "text-xs",
+                      active ? "text-background/70" : "text-muted-foreground/75"
+                    )}
+                  >
+                    ({category.publicComponentCount ?? 0})
+                  </span>
                 </span>
                 <ChevronRight className="size-4 opacity-55" />
               </Link>

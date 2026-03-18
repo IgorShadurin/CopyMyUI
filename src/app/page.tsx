@@ -9,7 +9,7 @@ import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
-import { getHomepageData, listCategories } from "@/lib/server/component-service";
+import { getHomepageData, listBrowseRailCategories } from "@/lib/server/component-service";
 import { getViewer } from "@/lib/viewer";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,8 +34,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   const { locale, messages } = await getI18n();
   const viewer = await getViewer();
-  const [categories, homepage] = await Promise.all([
-    listCategories(),
+  const [browseRailData, homepage] = await Promise.all([
+    listBrowseRailCategories(),
     getHomepageData(viewer?.id),
   ]);
 
@@ -45,7 +45,8 @@ export default async function Home() {
         <BrowseRail
           locale={locale}
           messages={messages}
-          categories={categories}
+          categories={browseRailData.categories}
+          totalPublicComponents={browseRailData.totalPublicComponents}
           viewer={viewer}
           categoryLinkMode="pages"
         />

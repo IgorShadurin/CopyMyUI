@@ -139,14 +139,29 @@ function auditAgainstBase(
 }
 
 export function auditMessages<TBase extends TranslationNode>(
-  messagesByLocale: Record<AppLocale, TBase>,
+  messagesByLocale: Partial<Record<AppLocale, TBase>>,
   baseLocale: AppLocale = "en"
 ) {
   const baseMessages = messagesByLocale[baseLocale];
+  if (!baseMessages) {
+    return [
+      {
+        kind: "missing-key" as const,
+        locale: baseLocale,
+        path: "root",
+        message: `Base locale "${baseLocale}" is missing from messagesByLocale.`,
+      },
+    ];
+  }
   const findings: AuditFinding[] = [];
 
   for (const locale of Object.keys(messagesByLocale) as AppLocale[]) {
-    auditAgainstBase(baseMessages, messagesByLocale[locale], locale, [], findings);
+    const localeMessages = messagesByLocale[locale];
+    if (!localeMessages) {
+      continue;
+    }
+
+    auditAgainstBase(baseMessages, localeMessages, locale, [], findings);
   }
 
   return findings;

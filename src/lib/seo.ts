@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 
 import { APP_NAME } from "@/lib/constants";
 import { getBaseUrl } from "@/lib/env";
-import { defaultLocale, locales, type AppLocale } from "@/i18n/config";
+import {
+  defaultLocale,
+  fullyTranslatedLocales,
+  type AppLocale,
+} from "@/i18n/config";
 import {
   getLocaleHostForLocale,
   isDomainLocaleRoutingEnabled,
@@ -52,7 +56,10 @@ function toOpenGraphLocale(locale: AppLocale) {
 
 export function buildAlternates(locale: AppLocale, path: string): Metadata["alternates"] {
   const languages = Object.fromEntries(
-    locales.map((currentLocale) => [currentLocale, absoluteLocaleUrl(currentLocale, path)])
+    fullyTranslatedLocales.map((currentLocale) => [
+      currentLocale,
+      absoluteLocaleUrl(currentLocale, path),
+    ])
   );
 
   return {

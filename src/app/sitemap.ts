@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { defaultLocale, locales } from "@/i18n/config";
+import { defaultLocale, fullyTranslatedLocales } from "@/i18n/config";
 import {
   getLocaleHostForLocale,
   isDomainLocaleRoutingEnabled,
@@ -12,7 +12,7 @@ import { prisma } from "@/lib/prisma";
 
 type ChangeFrequency = MetadataRoute.Sitemap[number]["changeFrequency"];
 
-function absoluteLocaleUrl(locale: (typeof locales)[number], path: string) {
+function absoluteLocaleUrl(locale: (typeof fullyTranslatedLocales)[number], path: string) {
   const localizedPath = withLocalePath(locale, path);
   const url = new URL(localizedPath, getBaseUrl());
 
@@ -42,11 +42,11 @@ function localizedEntries(
   }
 ): MetadataRoute.Sitemap {
   const languages = Object.fromEntries(
-    locales.map((locale) => [locale, absoluteLocaleUrl(locale, path)])
+    fullyTranslatedLocales.map((locale) => [locale, absoluteLocaleUrl(locale, path)])
   );
   languages["x-default"] = absoluteLocaleUrl(defaultLocale, path);
 
-  return locales.map((locale) => ({
+  return fullyTranslatedLocales.map((locale) => ({
     url: absoluteLocaleUrl(locale, path),
     lastModified,
     changeFrequency,
