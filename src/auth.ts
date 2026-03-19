@@ -28,27 +28,34 @@ const moderatorEmails = getModeratorEmails();
 const adminEmails = getAdminEmails();
 const authBaseDomain = getAuthBaseDomain();
 const authCookieDomain = getAuthCookieDomain();
+const isProduction = process.env.NODE_ENV === "production";
+const sessionCookieName = isProduction
+  ? "__Secure-copymyui.session-token"
+  : "copymyui.session-token";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as Adapter,
   trustHost: true,
   secret: getAuthSecret(),
-  useSecureCookies: process.env.NODE_ENV === "production",
+  useSecureCookies: isProduction,
   pages: {
     signIn: "/auth/signin",
   },
   session: {
     strategy: "database",
   },
-  cookies: authCookieDomain
-    ? {
-        sessionToken: {
-          options: {
-            domain: authCookieDomain,
-          },
-        },
-      }
-    : undefined,
+  cookies: {
+    sessionToken: {
+      name: sessionCookieName,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProduction,
+        ...(authCookieDomain ? { domain: authCookieDomain } : {}),
+      },
+    },
+  },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID ?? "copymyui-dev-google-id",

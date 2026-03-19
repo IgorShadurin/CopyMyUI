@@ -1,5 +1,3 @@
-import { cache } from "react";
-
 import { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -45,7 +43,7 @@ async function getDevViewer() {
   });
 }
 
-export const getViewer = cache(async (): Promise<Viewer | null> => {
+export async function getViewer(): Promise<Viewer | null> {
   const session = await auth();
 
   if (session?.user?.id) {
@@ -60,7 +58,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   }
 
   return getDevViewer();
-});
+}
 
 export async function requireViewer() {
   const viewer = await getViewer();
