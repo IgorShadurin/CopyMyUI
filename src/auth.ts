@@ -13,6 +13,7 @@ import {
 } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { createUniqueProfileSlug } from "@/lib/server/profile-slug";
+import { sendTelegramNewUserRegistrationNotification } from "@/lib/server/telegram-notifications";
 import { resolveUserRole } from "@/lib/server/user-management";
 import { isLocalDebugHost } from "@/i18n/routing";
 
@@ -106,6 +107,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   events: {
+    async createUser({ user }) {
+      await sendTelegramNewUserRegistrationNotification({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      });
+    },
     async signIn({ user }) {
       if (!user.email) {
         return;

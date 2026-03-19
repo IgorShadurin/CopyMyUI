@@ -102,6 +102,9 @@ CopyMyUI is built with a modern TypeScript stack centered around Next.js, Prisma
 - `AUTH_GOOGLE_SECRET`
 - `ADMIN_EMAILS`
 - `MODERATOR_EMAILS`
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_CHAT_ID`
+- `TELEGRAM_REGISTRATION_NOTIFICATIONS_ENABLED`
 
 ### Quality checks
 
