@@ -76,7 +76,7 @@ export default async function Home() {
                   </h2>
                 </div>
                 <Link
-                  href={withLocalePath(locale, "/components")}
+                  href={withLocalePath(locale, "/components?sort=top")}
                   className="inline-flex h-auto items-center gap-1 rounded-md p-0 text-sm font-medium text-muted-foreground no-underline underline-offset-4 transition-colors hover:text-foreground hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/70 focus-visible:outline-offset-2"
                 >
                   <span className="flex items-center">

@@ -6,6 +6,15 @@ import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCardList } from "@/components/component-card-list";
 import { EmptyState } from "@/components/empty-state";
 import { buttonVariants } from "@/components/ui/button-variants";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { type AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
@@ -24,7 +33,51 @@ type SearchParams = Promise<{
   category?: string;
   access?: string;
   sort?: string;
+  page?: string;
 }>;
+
+const COMPONENTS_PAGE_SIZE = 25;
+
+function parsePageParam(pageValue: string | undefined) {
+  if (!pageValue) {
+    return 1;
+  }
+
+  const parsed = Number.parseInt(pageValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function getPaginationTokens(currentPage: number, totalPages: number) {
+  const tokens: Array<number | "ellipsis-left" | "ellipsis-right"> = [];
+
+  if (totalPages <= 7) {
+    for (let page = 1; page <= totalPages; page += 1) {
+      tokens.push(page);
+    }
+    return tokens;
+  }
+
+  tokens.push(1);
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (start > 2) {
+    tokens.push("ellipsis-left");
+  }
+
+  for (let page = start; page <= end; page += 1) {
+    tokens.push(page);
+  }
+
+  if (end < totalPages - 1) {
+    tokens.push("ellipsis-right");
+  }
+
+  tokens.push(totalPages);
+
+  return tokens;
+}
 
 export async function generateMetadata({
   searchParams,
@@ -64,6 +117,7 @@ function buildComponentsHref(
     category?: string;
     access?: "free" | "premium";
     sort?: "top" | "newest";
+    page?: number;
   }
 ) {
   const searchParams = new URLSearchParams();
@@ -84,6 +138,10 @@ function buildComponentsHref(
     searchParams.set("sort", "newest");
   }
 
+  if (params.page && params.page > 1) {
+    searchParams.set("page", String(params.page));
+  }
+
   const query = searchParams.toString();
   return withLocalePath(locale, query ? `/components?${query}` : "/components");
 }
@@ -96,24 +154,32 @@ export default async function ComponentsPage({
   const { locale, messages } = await getI18n();
   const params = await searchParams;
   const normalizedQuery = normalizeSearchQuery(params.q);
+  const requestedPage = parsePageParam(params.page);
   const viewer = await getViewer();
-  const [browseRailData, components] = await Promise.all([
+  const [browseRailData, allComponents] = await Promise.all([
     listBrowseRailCategories(),
     listPublicComponents(
-        {
-          query: normalizedQuery,
-          categorySlug: params.category,
-          accessType:
-            params.access === "premium"
-              ? "premium"
-              : params.access === "free"
-                ? "free"
+      {
+        query: normalizedQuery,
+        categorySlug: params.category,
+        accessType:
+          params.access === "premium"
+            ? "premium"
+            : params.access === "free"
+              ? "free"
               : undefined,
-          sort: params.sort === "newest" ? "newest" : "top",
-        },
-        viewer?.id
+        sort: params.sort === "newest" ? "newest" : "top",
+      },
+      viewer?.id
     ),
   ]);
+  const totalCount = allComponents.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / COMPONENTS_PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const components = allComponents.slice(
+    (currentPage - 1) * COMPONENTS_PAGE_SIZE,
+    currentPage * COMPONENTS_PAGE_SIZE
+  );
   const currentAccess: "free" | "premium" | undefined =
     params.access === "premium"
       ? "premium"
@@ -248,6 +314,11 @@ export default async function ComponentsPage({
                       {messages.explorePage.newest}
                     </span>
                   ) : null}
+                  {currentPage > 1 ? (
+                    <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-4 py-2 text-sm text-foreground">
+                      {messages.categoryPage.paginationPage} {currentPage}
+                    </span>
+                  ) : null}
                   <Link
                     href={withLocalePath(locale, "/components")}
                     className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-[rgba(252,251,247,0.96)]"
@@ -261,7 +332,10 @@ export default async function ComponentsPage({
 
             <div className="mt-4 border-t border-black/6 pt-4">
               {components.length > 0 ? (
-                <ComponentCardList components={components} />
+                <ComponentCardList
+                  components={components}
+                  className="gap-4 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-5"
+                />
               ) : (
                 <EmptyState
                   eyebrow={messages.explorePage.emptyEyebrow}
@@ -272,6 +346,78 @@ export default async function ComponentsPage({
                 />
               )}
             </div>
+            {totalCount > 0 ? (
+              <div className="mt-5 border-t border-black/8 pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {messages.categoryPage.approvedCount}:{" "}
+                    <span className="font-semibold text-foreground">{totalCount}</span>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {totalPages > 1 ? (
+                      <Pagination className="w-auto">
+                        <PaginationContent>
+                          {currentPage > 1 ? (
+                            <PaginationItem>
+                              <PaginationPrevious
+                                href={buildComponentsHref(locale, {
+                                  ...listingBaseParams,
+                                  page: currentPage - 1,
+                                })}
+                                aria-label={messages.categoryPage.paginationPrevious}
+                              >
+                                {messages.categoryPage.paginationPrevious}
+                              </PaginationPrevious>
+                            </PaginationItem>
+                          ) : null}
+                          {getPaginationTokens(currentPage, totalPages).map((token) => {
+                            if (typeof token !== "number") {
+                              return (
+                                <PaginationItem key={token}>
+                                  <PaginationEllipsis />
+                                </PaginationItem>
+                              );
+                            }
+
+                            return (
+                              <PaginationItem key={token}>
+                                <PaginationLink
+                                  href={buildComponentsHref(locale, {
+                                    ...listingBaseParams,
+                                    page: token,
+                                  })}
+                                  isActive={token === currentPage}
+                                  aria-label={`${messages.categoryPage.paginationPage} ${token}`}
+                                >
+                                  {token}
+                                </PaginationLink>
+                              </PaginationItem>
+                            );
+                          })}
+                          {currentPage < totalPages ? (
+                            <PaginationItem>
+                              <PaginationNext
+                                href={buildComponentsHref(locale, {
+                                  ...listingBaseParams,
+                                  page: currentPage + 1,
+                                })}
+                                aria-label={messages.categoryPage.paginationNext}
+                              >
+                                {messages.categoryPage.paginationNext}
+                              </PaginationNext>
+                            </PaginationItem>
+                          ) : null}
+                        </PaginationContent>
+                      </Pagination>
+                    ) : (
+                      <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                        1 / 1
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </section>
         </div>
       </div>
