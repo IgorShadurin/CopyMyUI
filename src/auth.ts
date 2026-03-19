@@ -108,6 +108,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   events: {
     async createUser({ user }) {
+      if (!user.id) {
+        return;
+      }
+
       await sendTelegramNewUserRegistrationNotification({
         userId: user.id,
         email: user.email,
