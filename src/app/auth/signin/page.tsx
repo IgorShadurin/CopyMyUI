@@ -22,7 +22,12 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function SignInPage() {
+export default async function SignInPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const params = await searchParams;
   const { locale, messages } = await getI18n();
   const viewer = await getViewer();
 
@@ -31,6 +36,7 @@ export default async function SignInPage() {
   }
 
   const googleConfigured = isGoogleAuthConfigured();
+  const nextParam = typeof params.next === "string" ? params.next : null;
 
   return (
     <main className="mx-auto flex min-h-[calc(100vh-18rem)] w-full max-w-4xl items-center px-4 py-8 sm:px-6 sm:py-12">
@@ -60,6 +66,7 @@ export default async function SignInPage() {
           </p>
 
           <form action={googleSignInAction} className="mt-6">
+            {nextParam ? <input type="hidden" name="next" value={nextParam} /> : null}
             <AppActionButton type="submit" uiSize="lg" icon={<GoogleIcon />} className="h-12 w-full">
               {messages.signInPage.continueWithGoogle}
             </AppActionButton>

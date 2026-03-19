@@ -4,10 +4,17 @@ import Google from "next-auth/providers/google";
 
 import { PrismaAdapter } from "@auth/prisma-adapter";
 
-import { getAuthSecret, getAdminEmails, getModeratorEmails } from "@/lib/env";
+import {
+  getAuthBaseDomain,
+  getAuthCookieDomain,
+  getAuthSecret,
+  getAdminEmails,
+  getModeratorEmails,
+} from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { createUniqueProfileSlug } from "@/lib/server/profile-slug";
 import { resolveUserRole } from "@/lib/server/user-management";
+import { isLocalDebugHost } from "@/i18n/routing";
 
 // Multi-domain setup (copymyui.com + locale subdomains) requires using the
 // incoming request host. If AUTH_URL/NEXTAUTH_URL is set in platform env,
@@ -18,6 +25,8 @@ delete process.env.NEXTAUTH_URL_INTERNAL;
 
 const moderatorEmails = getModeratorEmails();
 const adminEmails = getAdminEmails();
+const authBaseDomain = getAuthBaseDomain();
+const authCookieDomain = getAuthCookieDomain();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as Adapter,
@@ -29,6 +38,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "database",
   },
+  cookies: authCookieDomain
+    ? {
+        sessionToken: {
+          options: {
+            domain: authCookieDomain,
+          },
+        },
+      }
+    : undefined,
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID ?? "copymyui-dev-google-id",
@@ -36,6 +54,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+
+      let targetUrl: URL;
+      let parsedBaseUrl: URL;
+
+      try {
+        targetUrl = new URL(url);
+        parsedBaseUrl = new URL(baseUrl);
+      } catch {
+        return baseUrl;
+      }
+
+      if (targetUrl.origin === parsedBaseUrl.origin) {
+        return targetUrl.toString();
+      }
+
+      const baseHost = parsedBaseUrl.hostname.toLowerCase();
+      const candidateHost = targetUrl.hostname.toLowerCase();
+      const allowedBaseDomain =
+        authBaseDomain ?? (!isLocalDebugHost(baseHost) ? baseHost : null);
+
+      if (!allowedBaseDomain) {
+        return baseUrl;
+      }
+
+      if (targetUrl.protocol !== "https:") {
+        return baseUrl;
+      }
+
+      if (
+        candidateHost === allowedBaseDomain ||
+        candidateHost.endsWith(`.${allowedBaseDomain}`)
+      ) {
+        return targetUrl.toString();
+      }
+
+      return baseUrl;
+    },
     async session({ session, user }) {
       if (session.user) {
         session.user.id = user.id;

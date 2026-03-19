@@ -1,27 +1,58 @@
 "use server";
 
 import { signIn, signOut } from "@/auth";
+import {
+  getCanonicalAuthHost,
+  getRequestHostFromHeaders,
+  getRequestOriginFromHeaders,
+  getRequestProtocolFromHeaders,
+  isSameHost,
+  resolveAuthReturnUrl,
+} from "@/lib/auth-domain";
 import { withLocalePath } from "@/i18n/routing";
 import { getRequestLocale } from "@/i18n/server";
 import { DEV_SESSION_COOKIE } from "@/lib/constants";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 export async function googleSignInAction(formData?: FormData) {
+  const headerStore = await headers();
   const locale = await getRequestLocale();
   const fallbackRedirectPath = withLocalePath(locale, "/dashboard");
-  let redirectPath = fallbackRedirectPath;
 
-  // When provided, keep users on the same page after Google auth.
-  // Only allow internal absolute paths to avoid open redirects.
+  const requestHost = getRequestHostFromHeaders(headerStore);
+  const requestOrigin = getRequestOriginFromHeaders(headerStore);
+
+  if (!requestHost || !requestOrigin) {
+    await signIn("google", {
+      redirectTo: fallbackRedirectPath,
+    });
+    return;
+  }
+
   const nextValue = formData?.get("next");
+  const explicitNext = typeof nextValue === "string" ? nextValue : null;
+  const returnUrl = resolveAuthReturnUrl({
+    explicitNext,
+    referer: headerStore.get("referer"),
+    fallbackPath: fallbackRedirectPath,
+    requestHost,
+    requestOrigin,
+  });
 
-  if (typeof nextValue === "string" && nextValue.startsWith("/") && !nextValue.startsWith("//")) {
-    redirectPath = nextValue;
+  const canonicalAuthHost = getCanonicalAuthHost(requestHost);
+  if (!isSameHost(requestHost, canonicalAuthHost)) {
+    const protocol = getRequestProtocolFromHeaders(headerStore, requestHost);
+    const signInUrl = new URL(
+      withLocalePath(locale, "/auth/signin"),
+      `${protocol}://${canonicalAuthHost}`
+    );
+    signInUrl.searchParams.set("next", returnUrl.toString());
+    redirect(signInUrl.toString());
   }
 
   await signIn("google", {
-    redirectTo: redirectPath,
+    redirectTo: returnUrl.toString(),
   });
 }
 
