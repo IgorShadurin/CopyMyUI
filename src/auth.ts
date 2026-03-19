@@ -33,6 +33,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma) as Adapter,
   trustHost: true,
   secret: getAuthSecret(),
+  useSecureCookies: process.env.NODE_ENV === "production",
   pages: {
     signIn: "/auth/signin",
   },

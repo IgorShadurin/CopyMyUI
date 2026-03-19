@@ -81,15 +81,21 @@ function normalizeForwardedHost(rawHost: string, forwardedProto: string | null) 
 
 function normalizeForwardedProto(rawProto: string | null, normalizedHost: string) {
   const firstValue = rawProto ? takeFirstHeaderValue(rawProto).toLowerCase() : null;
-  if (firstValue === "http" || firstValue === "https") {
+  if (isLocalDebugHost(normalizedHost)) {
+    if (firstValue === "http" || firstValue === "https") {
+      return firstValue;
+    }
+
+    return "http";
+  }
+
+  // Public production domains should always be treated as HTTPS even when
+  // upstream forwards internal HTTP between proxy and app container.
+  if (firstValue === "https") {
     return firstValue;
   }
 
-  if (!isLocalDebugHost(normalizedHost)) {
-    return "https";
-  }
-
-  return null;
+  return "https";
 }
 
 function withForwardedOrigin(request: NextRequest) {

@@ -49,16 +49,27 @@ function normalizeHost(host: string) {
 
 function normalizeProtocol(rawProtocol: string | null, host: string) {
   const firstValue = takeFirstHeaderValue(rawProtocol).toLowerCase();
-  if (firstValue === "http" || firstValue === "https") {
-    return firstValue;
+  const { hostname } = splitHostAndPort(host);
+
+  if (isLocalDebugHost(hostname)) {
+    if (firstValue === "http" || firstValue === "https") {
+      return firstValue;
+    }
+
+    return "http";
   }
 
-  const { hostname } = splitHostAndPort(host);
+  // Public production domains should always be treated as HTTPS even when
+  // proxy-to-app hop is internal HTTP.
+  if (firstValue === "https") {
+    return "https";
+  }
+
   if (!isLocalDebugHost(hostname)) {
     return "https";
   }
 
-  return "http";
+  return "https";
 }
 
 export function getRequestHostFromHeaders(headers: HeaderReader) {
