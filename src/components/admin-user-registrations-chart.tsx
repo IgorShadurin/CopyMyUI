@@ -49,6 +49,11 @@ export function AdminUserRegistrationsChart({
     return withLocalePath(locale, `/admin?${params.toString()}`);
   }
 
+  function getBarTitle(date: Date, count: number) {
+    const usersLabel = count === 1 ? "user registered" : "users registered";
+    return `${dateLabelFormatter.format(date)} · ${count} ${usersLabel}`;
+  }
+
   return (
     <section className="rounded-lg border border-black/8 bg-[rgba(252,251,247,0.76)] p-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -110,8 +115,8 @@ export function AdminUserRegistrationsChart({
                       point.count === 0 ? "bg-black/10 border-black/10" : ""
                     )}
                     style={{ height: `${heightPercent}%` }}
-                    title={`${dateLabelFormatter.format(point.date)} · ${point.count}`}
-                    aria-label={`${dateLabelFormatter.format(point.date)} · ${point.count}`}
+                    title={getBarTitle(point.date, point.count)}
+                    aria-label={getBarTitle(point.date, point.count)}
                   />
                   <span className="h-3 text-[10px] text-muted-foreground">
                     {isEveryNthTick ? dateLabelFormatter.format(point.date) : ""}
