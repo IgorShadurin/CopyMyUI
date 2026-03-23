@@ -86,16 +86,36 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, messages } = await getI18n();
   const params = await searchParams;
+  const normalizedQuery = normalizeSearchQuery(params.q);
+  const currentAccess: "free" | "premium" | undefined =
+    params.access === "premium"
+      ? "premium"
+      : params.access === "free"
+        ? "free"
+        : undefined;
+  const currentSort = params.sort === "newest" ? "newest" : "top";
+  const currentPage = parsePageParam(params.page);
+  const categorySlug = params.category?.trim();
+
+  const isCategoryListingCanonical =
+    Boolean(categorySlug) &&
+    !normalizedQuery &&
+    !currentAccess &&
+    currentSort === "top" &&
+    currentPage === 1;
   const hasFilters =
-    Boolean(normalizeSearchQuery(params.q)) ||
-    Boolean(params.category) ||
-    params.access === "premium" ||
-    params.access === "free" ||
-    params.sort === "newest";
+    Boolean(normalizedQuery) ||
+    Boolean(categorySlug) ||
+    Boolean(currentAccess) ||
+    currentSort === "newest" ||
+    currentPage > 1;
+  const metadataPath = isCategoryListingCanonical
+    ? `/components?category=${encodeURIComponent(categorySlug ?? "")}`
+    : "/components";
 
   return createPageMetadata({
     locale,
-    path: "/components",
+    path: metadataPath,
     title: messages.explorePage.title,
     description: messages.explorePage.description,
     keywords: [
@@ -106,7 +126,7 @@ export async function generateMetadata({
       "CopyMyUI components",
     ],
     imagePath: "/seed-screenshots/harbor-metrics-deck-full.jpg",
-    noIndex: hasFilters,
+    noIndex: hasFilters && !isCategoryListingCanonical,
   });
 }
 
