@@ -13,12 +13,14 @@ export function AdminUserRegistrationsChart({
   messages,
   selectedRange,
   categoryId,
+  usersPage,
   points,
 }: {
   locale: AppLocale;
   messages: Messages;
   selectedRange: SupportedRange;
   categoryId?: string;
+  usersPage?: number;
   points: Array<{
     date: Date;
     count: number;
@@ -38,6 +40,10 @@ export function AdminUserRegistrationsChart({
 
     if (categoryId) {
       params.set("categoryId", categoryId);
+    }
+
+    if (usersPage && usersPage > 1) {
+      params.set("usersPage", String(usersPage));
     }
 
     return withLocalePath(locale, `/admin?${params.toString()}`);
@@ -94,7 +100,10 @@ export function AdminUserRegistrationsChart({
               const isEveryNthTick = index % Math.max(1, Math.floor(points.length / 10)) === 0;
 
               return (
-                <div key={point.date.toISOString()} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                <div
+                  key={point.date.toISOString()}
+                  className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
+                >
                   <div
                     className={cn(
                       "w-full rounded-[4px] border border-orange-200/70 bg-orange-400/80",

@@ -17,6 +17,7 @@ const publicUserSelect = {
 } satisfies Prisma.UserSelect;
 
 const ALLOWED_REGISTRATION_RANGES = [7, 30, 90] as const;
+const ADMIN_USERS_PAGE_SIZE = 50;
 
 function normalizeRegistrationRange(days?: number) {
   if (!days) {
@@ -50,6 +51,14 @@ function buildRegistrationDays(days: number) {
   }
 
   return result;
+}
+
+function normalizeAdminUsersPage(page?: number) {
+  if (!page) {
+    return 1;
+  }
+
+  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 }
 
 export async function purchasePremiumComponent(componentId: string, buyerId: string) {
@@ -203,11 +212,18 @@ export async function getPublicCreatorProfile(profileSlug: string, viewerId?: st
   };
 }
 
-export async function getAdminDashboardData(days: number = 30) {
+export async function getAdminDashboardData({
+  days = 30,
+  usersPage = 1,
+}: {
+  days?: number;
+  usersPage?: number;
+} = {}) {
+  const normalizedUsersPage = normalizeAdminUsersPage(usersPage);
   const registrationDays = buildRegistrationDays(days);
   const registrationStart = registrationDays[0] ?? startOfUtcDay(new Date());
   const platformConfig = await getPlatformConfig();
-  const [premiumComponents, recentPurchases, users] = await Promise.all([
+  const [premiumComponents, recentPurchases, users, totalUsersCount, latestUsers] = await Promise.all([
     prisma.component.findMany({
       where: {
         approvedRevisionId: { not: null },
@@ -245,6 +261,20 @@ export async function getAdminDashboardData(days: number = 30) {
         },
       },
       select: {
+        createdAt: true,
+      },
+    }),
+    prisma.user.count(),
+    prisma.user.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip: (normalizedUsersPage - 1) * ADMIN_USERS_PAGE_SIZE,
+      take: ADMIN_USERS_PAGE_SIZE,
+      select: {
+        id: true,
+        name: true,
+        email: true,
         createdAt: true,
       },
     }),
@@ -298,5 +328,17 @@ export async function getAdminDashboardData(days: number = 30) {
         count: registrationsByDay.get(key) ?? 0,
       };
     }),
+    latestUsers: latestUsers.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      createdAt: user.createdAt,
+    })),
+    latestUsersPagination: {
+      page: normalizedUsersPage,
+      pageSize: ADMIN_USERS_PAGE_SIZE,
+      totalCount: totalUsersCount,
+      totalPages: Math.max(1, Math.ceil(totalUsersCount / ADMIN_USERS_PAGE_SIZE)),
+    },
   };
 }
