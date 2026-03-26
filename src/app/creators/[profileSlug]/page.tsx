@@ -3,14 +3,84 @@ import { notFound } from "next/navigation";
 import { Crown, Layers3 } from "lucide-react";
 
 import { ComponentCardList } from "@/components/component-card-list";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { AppLocale } from "@/i18n/config";
+import { withLocalePath } from "@/i18n/routing";
 import { getI18n } from "@/i18n/server";
 import { createPageMetadata } from "@/lib/seo";
 import { getPublicCreatorProfile } from "@/lib/server/marketplace-service";
 import { getViewer } from "@/lib/viewer";
 
+const CREATOR_COMPONENTS_PAGE_SIZE = 48;
+
 function profileTitle(name: string | null) {
   return name ? `${name} · CopyMyUI` : "Creator · CopyMyUI";
+}
+
+function parsePageParam(pageValue: string | undefined) {
+  if (!pageValue) {
+    return 1;
+  }
+
+  const parsed = Number.parseInt(pageValue, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
+function buildCreatorPageHref(
+  locale: AppLocale,
+  profileSlug: string,
+  page: number
+) {
+  if (page <= 1) {
+    return withLocalePath(locale, `/creators/${profileSlug}`);
+  }
+
+  const searchParams = new URLSearchParams({ page: String(page) });
+  return withLocalePath(
+    locale,
+    `/creators/${profileSlug}?${searchParams.toString()}`
+  );
+}
+
+function getPaginationTokens(currentPage: number, totalPages: number) {
+  const tokens: Array<number | "ellipsis-left" | "ellipsis-right"> = [];
+
+  if (totalPages <= 7) {
+    for (let page = 1; page <= totalPages; page += 1) {
+      tokens.push(page);
+    }
+    return tokens;
+  }
+
+  tokens.push(1);
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  if (start > 2) {
+    tokens.push("ellipsis-left");
+  }
+
+  for (let page = start; page <= end; page += 1) {
+    tokens.push(page);
+  }
+
+  if (end < totalPages - 1) {
+    tokens.push("ellipsis-right");
+  }
+
+  tokens.push(totalPages);
+
+  return tokens;
 }
 
 function initials(name: string | null | undefined) {
@@ -54,22 +124,37 @@ export async function generateMetadata({
 
 export default async function CreatorProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ profileSlug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const { messages } = await getI18n();
+  const { locale, messages } = await getI18n();
   const viewer = await getViewer();
   const { profileSlug } = await params;
+  const query = await searchParams;
+  const requestedPage = parsePageParam(query.page);
   const creator = await getPublicCreatorProfile(profileSlug, viewer?.id);
 
   if (!creator) {
     notFound();
   }
 
-  const freeComponents = creator.components.filter(
+  const totalCount = creator.components.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(totalCount / CREATOR_COMPONENTS_PAGE_SIZE)
+  );
+  const currentPage = Math.min(requestedPage, totalPages);
+  const pagedComponents = creator.components.slice(
+    (currentPage - 1) * CREATOR_COMPONENTS_PAGE_SIZE,
+    currentPage * CREATOR_COMPONENTS_PAGE_SIZE
+  );
+
+  const freeComponents = pagedComponents.filter(
     (component) => component.accessType === "FREE"
   );
-  const premiumComponents = creator.components.filter(
+  const premiumComponents = pagedComponents.filter(
     (component) => component.accessType === "PREMIUM"
   );
   const groupedSections = [
@@ -137,6 +222,82 @@ export default async function CreatorProfilePage({
                   />
                 </section>
               ))}
+            </div>
+          </div>
+        ) : null}
+
+        {totalCount > 0 ? (
+          <div className="mt-8 border-t border-black/8 pt-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                {messages.categoryPage.approvedCount}:{" "}
+                <span className="font-semibold text-foreground">{totalCount}</span>
+              </p>
+              <div className="flex items-center gap-2">
+                {totalPages > 1 ? (
+                  <Pagination className="w-auto">
+                    <PaginationContent>
+                      {currentPage > 1 ? (
+                        <PaginationItem>
+                          <PaginationPrevious
+                            href={buildCreatorPageHref(
+                              locale,
+                              profileSlug,
+                              currentPage - 1
+                            )}
+                            aria-label={messages.categoryPage.paginationPrevious}
+                          >
+                            {messages.categoryPage.paginationPrevious}
+                          </PaginationPrevious>
+                        </PaginationItem>
+                      ) : null}
+                      {getPaginationTokens(currentPage, totalPages).map((token) => {
+                        if (typeof token !== "number") {
+                          return (
+                            <PaginationItem key={token}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+
+                        return (
+                          <PaginationItem key={token}>
+                            <PaginationLink
+                              href={buildCreatorPageHref(
+                                locale,
+                                profileSlug,
+                                token
+                              )}
+                              isActive={token === currentPage}
+                              aria-label={`${messages.categoryPage.paginationPage} ${token}`}
+                            >
+                              {token}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+                      {currentPage < totalPages ? (
+                        <PaginationItem>
+                          <PaginationNext
+                            href={buildCreatorPageHref(
+                              locale,
+                              profileSlug,
+                              currentPage + 1
+                            )}
+                            aria-label={messages.categoryPage.paginationNext}
+                          >
+                            {messages.categoryPage.paginationNext}
+                          </PaginationNext>
+                        </PaginationItem>
+                      ) : null}
+                    </PaginationContent>
+                  </Pagination>
+                ) : (
+                  <span className="rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                    1 / 1
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ) : null}
