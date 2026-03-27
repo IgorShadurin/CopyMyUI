@@ -24,7 +24,7 @@ function absoluteUrl(path: string) {
   return new URL(path, getBaseUrl()).toString();
 }
 
-function absoluteLocaleUrl(locale: AppLocale, path: string) {
+export function getAbsoluteLocaleUrl(locale: AppLocale, path: string) {
   const localizedPath = withLocalePath(locale, path);
   const url = new URL(localizedPath, getBaseUrl());
 
@@ -58,15 +58,15 @@ export function buildAlternates(locale: AppLocale, path: string): Metadata["alte
   const languages = Object.fromEntries(
     fullyTranslatedLocales.map((currentLocale) => [
       currentLocale,
-      absoluteLocaleUrl(currentLocale, path),
+      getAbsoluteLocaleUrl(currentLocale, path),
     ])
   );
 
   return {
-    canonical: absoluteLocaleUrl(locale, path),
+    canonical: getAbsoluteLocaleUrl(locale, path),
     languages: {
       ...languages,
-      "x-default": absoluteLocaleUrl(defaultLocale, path),
+      "x-default": getAbsoluteLocaleUrl(defaultLocale, path),
     },
   };
 }
@@ -125,7 +125,7 @@ export function createPageMetadata({
 }: CreatePageMetadataInput): Metadata {
   const normalizedTitle = normalizeText(title);
   const normalizedDescription = normalizeText(description);
-  const url = absoluteLocaleUrl(locale, path);
+  const url = getAbsoluteLocaleUrl(locale, path);
   const image = imagePath ? absoluteUrl(imagePath) : null;
 
   return {

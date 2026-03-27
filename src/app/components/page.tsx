@@ -5,6 +5,7 @@ import { ArrowUpDown, Crown, PanelTop, RotateCcw } from "lucide-react";
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCardList } from "@/components/component-card-list";
 import { EmptyState } from "@/components/empty-state";
+import { SeoBreadcrumbs } from "@/components/seo-breadcrumbs";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   Pagination,
@@ -19,12 +20,17 @@ import { type AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, getAbsoluteLocaleUrl } from "@/lib/seo";
 import { normalizeSearchQuery } from "@/lib/search";
 import {
   listBrowseRailCategories,
   listPublicComponents,
 } from "@/lib/server/component-service";
+import {
+  buildBreadcrumbListJsonLd,
+  buildCollectionPageJsonLd,
+  serializeJsonLd,
+} from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 import { getViewer } from "@/lib/viewer";
 
@@ -79,6 +85,10 @@ function getPaginationTokens(currentPage: number, totalPages: number) {
   return tokens;
 }
 
+function toCategoryLabel(slug: string | undefined) {
+  return slug ? slug.replaceAll("-", " ") : null;
+}
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -96,6 +106,7 @@ export async function generateMetadata({
   const currentSort = params.sort === "newest" ? "newest" : "top";
   const currentPage = parsePageParam(params.page);
   const categorySlug = params.category?.trim();
+  const categoryLabel = toCategoryLabel(categorySlug);
 
   const hasSearchQuery = Boolean(normalizedQuery);
   const metadataPath = hasSearchQuery
@@ -106,12 +117,41 @@ export async function generateMetadata({
         sort: currentSort,
         page: currentPage,
       });
+  const metadataTitleParts = [
+    messages.explorePage.title,
+    categoryLabel,
+    currentAccess === "premium"
+      ? messages.explorePage.premiumOnly
+      : currentAccess === "free"
+        ? messages.explorePage.freeOnly
+        : null,
+    currentSort === "newest"
+      ? messages.explorePage.newest
+      : messages.explorePage.topRated,
+    currentPage > 1 ? `${messages.categoryPage.paginationPage} ${currentPage}` : null,
+  ].filter(Boolean);
+  const metadataTitle = metadataTitleParts.join(" · ");
+  const metadataDescriptionTraits = [
+    categoryLabel,
+    currentAccess === "premium"
+      ? messages.explorePage.premiumOnly
+      : currentAccess === "free"
+        ? messages.explorePage.freeOnly
+        : null,
+    currentSort === "newest"
+      ? messages.explorePage.newest
+      : messages.explorePage.topRated,
+  ].filter(Boolean);
+  const metadataDescription =
+    metadataDescriptionTraits.length > 0
+      ? `${messages.explorePage.description} ${metadataDescriptionTraits.join(" · ")}.`
+      : messages.explorePage.description;
 
   return createPageMetadata({
     locale,
     path: metadataPath,
-    title: messages.explorePage.title,
-    description: messages.explorePage.description,
+    title: metadataTitle,
+    description: metadataDescription,
     keywords: [
       "SwiftUI component gallery",
       "SwiftUI search",
@@ -238,9 +278,36 @@ export default async function ComponentsPage({
     params.access === "premium" ||
     params.access === "free" ||
     params.sort === "newest";
+  const listingPath = buildComponentsPath({
+    category: params.category || undefined,
+    access: currentAccess,
+    sort: currentSort,
+    page: currentPage,
+    q: normalizedQuery || undefined,
+  });
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd(locale, [
+    { name: "CopyMyUI", path: "/" },
+    { name: messages.explorePage.title, path: listingPath },
+  ]);
+  const collectionJsonLd = buildCollectionPageJsonLd({
+    locale,
+    path: listingPath,
+    name: messages.explorePage.title,
+    description: messages.explorePage.description,
+    itemUrls: components
+      .slice(0, 12)
+      .map((component) => getAbsoluteLocaleUrl(locale, `/components/${component.slug}`)),
+  });
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-2 py-6 sm:px-3 lg:px-4">
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd([breadcrumbJsonLd, collectionJsonLd]),
+        }}
+      />
       <div className="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <BrowseRail
           locale={locale}
@@ -257,6 +324,12 @@ export default async function ComponentsPage({
 
         <div className="min-w-0">
           <section className="rounded-[1.8rem] border border-black/6 bg-white/90 p-4 shadow-[0_24px_70px_-52px_rgba(22,18,12,0.38)] backdrop-blur sm:rounded-[2rem] sm:p-5">
+            <SeoBreadcrumbs
+              items={[
+                { label: "CopyMyUI", href: withLocalePath(locale, "/") },
+                { label: messages.explorePage.title },
+              ]}
+            />
             <div className="max-w-3xl">
               <h1 className="inline-flex items-center gap-2.5 text-3xl font-semibold tracking-[-0.04em] text-foreground sm:text-4xl">
                 <PanelTop className="size-6 text-muted-foreground sm:size-7" />

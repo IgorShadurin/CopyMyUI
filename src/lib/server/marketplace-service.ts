@@ -212,6 +212,38 @@ export async function getPublicCreatorProfile(profileSlug: string, viewerId?: st
   };
 }
 
+export async function listPublicCreatorComponents(
+  profileSlug: string,
+  viewerId?: string | null,
+  options?: {
+    excludeComponentId?: string;
+    take?: number;
+  }
+) {
+  const platformConfig = await getPlatformConfig();
+  const limit = Math.max(1, Math.min(24, options?.take ?? 8));
+  const components = await prisma.component.findMany({
+    where: {
+      approvedRevisionId: { not: null },
+      id: options?.excludeComponentId
+        ? {
+            not: options.excludeComponentId,
+          }
+        : undefined,
+      owner: {
+        profileSlug,
+      },
+    },
+    orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
+    take: limit,
+    include: listInclude,
+  });
+
+  return components.map((component) =>
+    toPublicCard(component, platformConfig.premiumMarkupPercent, viewerId)
+  );
+}
+
 export async function getAdminDashboardData({
   days = 30,
   usersPage = 1,

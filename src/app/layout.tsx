@@ -10,7 +10,8 @@ import { SiteHeader } from "@/components/site-header";
 import { getI18n } from "@/i18n/server";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants";
 import { getBaseUrl } from "@/lib/env";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, getAbsoluteLocaleUrl } from "@/lib/seo";
+import { serializeJsonLd } from "@/lib/structured-data";
 import { getViewer } from "@/lib/viewer";
 
 const sans = Space_Grotesk({
@@ -79,6 +80,27 @@ export default async function RootLayout({
 }>) {
   const { locale, messages } = await getI18n();
   const viewer = await getViewer();
+  const websiteUrl = getAbsoluteLocaleUrl(locale, "/");
+  const componentsUrl = getAbsoluteLocaleUrl(locale, "/components");
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: APP_NAME,
+    url: websiteUrl,
+    logo: `${getBaseUrl()}/icon.png`,
+  };
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: APP_NAME,
+    url: websiteUrl,
+    inLanguage: locale,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${componentsUrl}?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  };
 
   return (
     <html lang={locale} className="light">
@@ -95,6 +117,13 @@ export default async function RootLayout({
             gtag('config', 'G-2YDTMJPGMQ');
           `}
         </Script>
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd([organizationJsonLd, websiteJsonLd]),
+          }}
+        />
       </head>
       <body
         className={`${sans.variable} ${mono.variable} ${display.variable} min-h-screen bg-background text-foreground antialiased`}

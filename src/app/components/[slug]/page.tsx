@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { Code2, Crown, Layers3, Lock, LogIn, PanelTop } from "lucide-react";
 
 import { CodeCopyButton } from "@/components/code-copy-button";
+import { ComponentCardList } from "@/components/component-card-list";
 import { CodePreview } from "@/components/code-preview";
 import { ComponentMediaGallery } from "@/components/component-media-gallery";
 import { FavoriteButton } from "@/components/favorite-button";
 import { GoogleSignInModalButton } from "@/components/google-signin-modal-button";
 import { PageNotice } from "@/components/page-notice";
+import { SeoBreadcrumbs } from "@/components/seo-breadcrumbs";
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppActionButton } from "@/components/ui/app-action-button";
@@ -19,8 +21,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { purchasePremiumComponentAction } from "@/lib/actions/marketplace-actions";
 import { CategoryIcon } from "@/lib/category-icons";
 import { formatUsdCents } from "@/lib/pricing";
-import { createPageMetadata } from "@/lib/seo";
-import { getPublicComponentBySlug } from "@/lib/server/component-service";
+import { createPageMetadata, getAbsoluteLocaleUrl } from "@/lib/seo";
+import {
+  getPublicComponentBySlug,
+  listRelatedPublicComponentsByCategory,
+} from "@/lib/server/component-service";
+import { listPublicCreatorComponents } from "@/lib/server/marketplace-service";
+import {
+  buildBreadcrumbListJsonLd,
+  serializeJsonLd,
+} from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 import { getViewer } from "@/lib/viewer";
 
@@ -68,12 +78,18 @@ export async function generateMetadata({
 
   const category = translateCategory(component.category, messages, locale);
   const ogImage = component.screenshots.find((screenshot) => !isVideoMedia(screenshot))?.url;
+  const title = `${component.title} · ${category.name} SwiftUI`;
+  const description = `${component.summary} ${
+    component.accessType === "PREMIUM"
+      ? messages.detailPage.premiumLockedDescription
+      : messages.detailPage.swiftSourceTitle
+  }`;
 
   return createPageMetadata({
     locale,
     path: `/components/${component.slug}`,
-    title: component.title,
-    description: component.summary,
+    title,
+    description,
     type: "article",
     keywords: [
       "SwiftUI component",
@@ -104,6 +120,74 @@ export default async function ComponentDetailPage({
   }
 
   const category = translateCategory(component.category, messages, locale);
+  const [relatedByCategoryRaw, moreFromCreatorRaw] = await Promise.all([
+    listRelatedPublicComponentsByCategory(
+      component.category.slug,
+      component.id,
+      viewer?.id,
+      8
+    ),
+    component.owner.profileSlug
+      ? listPublicCreatorComponents(component.owner.profileSlug, viewer?.id, {
+          excludeComponentId: component.id,
+          take: 8,
+        })
+      : Promise.resolve([]),
+  ]);
+  const relatedByCategory = relatedByCategoryRaw.filter(
+    (candidate) => candidate.owner.id !== component.owner.id
+  );
+  const relatedByCreator = moreFromCreatorRaw.filter(
+    (candidate) => candidate.category.slug !== component.category.slug
+  );
+  const breadcrumbItems = [
+    { name: "CopyMyUI", path: "/" },
+    { name: messages.explorePage.title, path: "/components" },
+    { name: category.name, path: `/categories/${component.category.slug}` },
+    { name: component.title, path: `/components/${component.slug}` },
+  ];
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd(locale, breadcrumbItems);
+  const componentPreviewImage =
+    component.screenshots.find((screenshot) => !isVideoMedia(screenshot))?.previewUrl ??
+    component.screenshots.find((screenshot) => !isVideoMedia(screenshot))?.url ??
+    undefined;
+  const componentJsonLd =
+    component.accessType === "PREMIUM" && component.salePriceCents
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: component.title,
+          description: component.summary,
+          image: componentPreviewImage,
+          category: category.name,
+          brand: {
+            "@type": "Brand",
+            name: "CopyMyUI",
+          },
+          offers: {
+            "@type": "Offer",
+            price: (component.salePriceCents / 100).toFixed(2),
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+            url: getAbsoluteLocaleUrl(locale, `/components/${component.slug}`),
+          },
+        }
+      : {
+          "@context": "https://schema.org",
+          "@type": "SoftwareSourceCode",
+          name: component.title,
+          description: component.summary,
+          programmingLanguage: "SwiftUI",
+          codeSampleType: "full",
+          url: getAbsoluteLocaleUrl(locale, `/components/${component.slug}`),
+          creator: {
+            "@type": "Person",
+            name: component.owner.name ?? messages.profilePage.defaultName,
+            url: component.owner.profileSlug
+              ? getAbsoluteLocaleUrl(locale, `/creators/${component.owner.profileSlug}`)
+              : undefined,
+          },
+        };
   const latestApprovedRevision = component.revisions
     .filter((revision) => revision.status === "APPROVED")
     .sort(
@@ -173,6 +257,21 @@ export default async function ComponentDetailPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 md:py-14">
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd([breadcrumbJsonLd, componentJsonLd]),
+        }}
+      />
+      <SeoBreadcrumbs
+        items={[
+          { label: "CopyMyUI", href: withLocalePath(locale, "/") },
+          { label: messages.explorePage.title, href: withLocalePath(locale, "/components") },
+          { label: category.name, href: withLocalePath(locale, `/categories/${component.category.slug}`) },
+          { label: component.title },
+        ]}
+      />
       {query.purchased === "1" ? (
         <PageNotice tone="success" message={messages.purchasesPage.noticePurchased} />
       ) : null}
@@ -380,6 +479,46 @@ export default async function ComponentDetailPage({
         </div>
         {renderLatestApprovalCard("order-4 xl:hidden")}
       </section>
+
+      {relatedByCategory.length > 0 ? (
+        <section className="rounded-[2rem] border border-black/6 bg-white/90 p-4 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.28)] sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3 border-b border-black/6 pb-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {category.name} · {messages.explorePage.title}
+            </h2>
+            <Link
+              href={withLocalePath(locale, `/categories/${component.category.slug}`)}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {messages.home.browseEveryComponent}
+            </Link>
+          </div>
+          <ComponentCardList
+            components={relatedByCategory.slice(0, 8)}
+            className="gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4"
+          />
+        </section>
+      ) : null}
+
+      {relatedByCreator.length > 0 && component.owner.profileSlug ? (
+        <section className="rounded-[2rem] border border-black/6 bg-white/90 p-4 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.28)] sm:p-5">
+          <div className="mb-4 flex items-center justify-between gap-3 border-b border-black/6 pb-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {messages.common.creator}: {component.owner.name ?? messages.profilePage.defaultName}
+            </h2>
+            <Link
+              href={withLocalePath(locale, `/creators/${component.owner.profileSlug}`)}
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {messages.home.browseEveryComponent}
+            </Link>
+          </div>
+          <ComponentCardList
+            components={relatedByCreator.slice(0, 8)}
+            className="gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4"
+          />
+        </section>
+      ) : null}
     </main>
   );
 }

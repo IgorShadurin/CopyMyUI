@@ -715,6 +715,37 @@ export async function listPublicComponents(
   );
 }
 
+export async function listRelatedPublicComponentsByCategory(
+  categorySlug: string,
+  excludeComponentId: string,
+  viewerId?: string | null,
+  take = 8
+) {
+  const platformConfig = await getPlatformConfig();
+  const limit = Math.max(1, Math.min(24, take));
+
+  const components = await prisma.component.findMany({
+    where: {
+      approvedRevisionId: { not: null },
+      id: { not: excludeComponentId },
+      categoryLinks: {
+        some: {
+          category: {
+            slug: categorySlug,
+          },
+        },
+      },
+    },
+    orderBy: [{ favoritesCount: "desc" }, { publishedAt: "desc" }],
+    take: limit,
+    include: listInclude,
+  });
+
+  return components.map((component) =>
+    toPublicCard(component, platformConfig.premiumMarkupPercent, viewerId)
+  );
+}
+
 async function getPublicComponent(
   where: Prisma.ComponentWhereUniqueInput,
   viewer: Viewer | null

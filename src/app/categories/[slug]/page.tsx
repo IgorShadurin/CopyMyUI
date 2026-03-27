@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowUpDown, Crown } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCardList } from "@/components/component-card-list";
 import { EmptyState } from "@/components/empty-state";
+import { SeoBreadcrumbs } from "@/components/seo-breadcrumbs";
 import {
   Pagination,
   PaginationContent,
@@ -17,9 +20,14 @@ import type { AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
-import { createPageMetadata } from "@/lib/seo";
+import { createPageMetadata, getAbsoluteLocaleUrl } from "@/lib/seo";
 import { listBrowseRailCategories } from "@/lib/server/component-service";
 import { getPublicCategoryPageData } from "@/lib/server/category-service";
+import {
+  buildBreadcrumbListJsonLd,
+  buildCollectionPageJsonLd,
+  serializeJsonLd,
+} from "@/lib/structured-data";
 import { getViewer } from "@/lib/viewer";
 
 const CATEGORY_PAGE_SIZE = 15;
@@ -40,6 +48,15 @@ function buildCategoryPageHref(locale: AppLocale, slug: string, page: number) {
 
   const searchParams = new URLSearchParams({ page: String(page) });
   return withLocalePath(locale, `/categories/${slug}?${searchParams.toString()}`);
+}
+
+function buildCategoryPagePath(slug: string, page: number) {
+  if (page <= 1) {
+    return `/categories/${slug}`;
+  }
+
+  const searchParams = new URLSearchParams({ page: String(page) });
+  return `/categories/${slug}?${searchParams.toString()}`;
 }
 
 function getPaginationTokens(currentPage: number, totalPages: number) {
@@ -76,24 +93,38 @@ function getPaginationTokens(currentPage: number, totalPages: number) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }): Promise<Metadata> {
   const { locale, messages } = await getI18n();
   const { slug } = await params;
-  const categoryPage = await getPublicCategoryPageData(slug, null);
+  const query = await searchParams;
+  const currentPage = parsePageParam(query.page);
+  const categoryPage = await getPublicCategoryPageData(slug, null, {
+    page: currentPage,
+    pageSize: CATEGORY_PAGE_SIZE,
+  });
 
   if (!categoryPage) {
     return {};
   }
 
   const category = translateCategory(categoryPage.category, messages, locale);
+  const pageSuffix =
+    categoryPage.pagination.currentPage > 1
+      ? ` · ${messages.categoryPage.paginationPage} ${categoryPage.pagination.currentPage}`
+      : "";
 
   return createPageMetadata({
     locale,
-    path: `/categories/${categoryPage.category.slug}`,
-    title: category.name,
-    description: category.description,
+    path: buildCategoryPagePath(
+      categoryPage.category.slug,
+      categoryPage.pagination.currentPage
+    ),
+    title: `${category.name} · ${messages.explorePage.title}${pageSuffix}`,
+    description: `${category.description} ${messages.categoryPage.approvedCount}: ${categoryPage.pagination.totalCount}.`,
     keywords: [
       `${category.name} SwiftUI`,
       `${category.name} components`,
@@ -129,9 +160,40 @@ export default async function CategoryPage({
   }
 
   const category = translateCategory(categoryPage.category, messages, locale);
+  const breadcrumbItems = [
+    { name: "CopyMyUI", path: "/" },
+    { name: messages.explorePage.title, path: "/components" },
+    { name: category.name, path: buildCategoryPagePath(slug, categoryPage.pagination.currentPage) },
+  ];
+  const breadcrumbJsonLd = buildBreadcrumbListJsonLd(locale, breadcrumbItems);
+  const collectionJsonLd = buildCollectionPageJsonLd({
+    locale,
+    path: buildCategoryPagePath(slug, categoryPage.pagination.currentPage),
+    name: `${category.name} · ${messages.explorePage.title}`,
+    description: category.description,
+    itemUrls: categoryPage.components
+      .slice(0, 12)
+      .map((component) => getAbsoluteLocaleUrl(locale, `/components/${component.slug}`)),
+  });
+  const categoryTopHref = withLocalePath(locale, `/components?category=${slug}`);
+  const categoryNewestHref = withLocalePath(
+    locale,
+    `/components?category=${slug}&sort=newest`
+  );
+  const categoryPremiumHref = withLocalePath(
+    locale,
+    `/components?category=${slug}&access=premium`
+  );
 
   return (
     <main className="mx-auto w-full max-w-[1500px] px-2 py-6 sm:px-3 lg:px-4">
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd([breadcrumbJsonLd, collectionJsonLd]),
+        }}
+      />
       <div className="grid gap-6 lg:grid-cols-[270px_minmax(0,1fr)]">
         <BrowseRail
           locale={locale}
@@ -145,6 +207,13 @@ export default async function CategoryPage({
 
         <div className="min-w-0">
           <section className="rounded-[2rem] border border-black/6 bg-white/84 p-4 shadow-[0_20px_56px_-42px_rgba(22,18,12,0.24)] backdrop-blur sm:p-5">
+            <SeoBreadcrumbs
+              items={[
+                { label: "CopyMyUI", href: withLocalePath(locale, "/") },
+                { label: messages.explorePage.title, href: withLocalePath(locale, "/components") },
+                { label: category.name },
+              ]}
+            />
             <div className="rounded-[1.4rem] border border-black/8 bg-[rgba(252,251,247,0.98)] p-4 sm:p-5">
               <div className="max-w-3xl">
                 <h1 className="inline-flex items-center gap-3 text-4xl font-semibold tracking-[-0.05em] text-foreground sm:text-5xl">
@@ -157,6 +226,42 @@ export default async function CategoryPage({
                 <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                   {category.description}
                 </p>
+              </div>
+              <div className="mt-5 rounded-[1.1rem] border border-black/8 bg-white/80 p-3">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{category.name}</span> ·{" "}
+                  {messages.categoryPage.approvedCount}:{" "}
+                  <span className="font-semibold text-foreground">
+                    {categoryPage.pagination.totalCount}
+                  </span>{" "}
+                  · {messages.categoryPage.premiumCount}:{" "}
+                  <span className="font-semibold text-foreground">
+                    {categoryPage.premiumCount}
+                  </span>
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={categoryTopHref}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ArrowUpDown className="size-3.5" />
+                    {messages.explorePage.topRated}
+                  </Link>
+                  <Link
+                    href={categoryNewestHref}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <ArrowUpDown className="size-3.5" />
+                    {messages.explorePage.newest}
+                  </Link>
+                  <Link
+                    href={categoryPremiumHref}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-black/8 bg-[rgba(252,251,247,0.96)] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <Crown className="size-3.5" />
+                    {messages.explorePage.premiumOnly}
+                  </Link>
+                </div>
               </div>
             </div>
 

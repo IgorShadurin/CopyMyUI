@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { ComponentAccessType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import {
@@ -97,7 +97,19 @@ export async function getPublicCategoryPageData(
   const requestedPage = options?.page ?? 1;
   const normalizedRequestedPage = Math.max(1, Math.trunc(requestedPage));
 
-  const totalCount = await prisma.component.count({ where });
+  const [totalCount, premiumCount] = await Promise.all([
+    prisma.component.count({ where }),
+    prisma.component.count({
+      where: {
+        ...where,
+        approvedRevision: {
+          is: {
+            accessType: ComponentAccessType.PREMIUM,
+          },
+        },
+      },
+    }),
+  ]);
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   const currentPage = Math.min(normalizedRequestedPage, totalPages);
 
@@ -118,6 +130,7 @@ export async function getPublicCategoryPageData(
   return {
     category,
     components: cards,
+    premiumCount,
     pagination: {
       currentPage,
       pageSize,
