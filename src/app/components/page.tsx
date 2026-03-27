@@ -97,21 +97,15 @@ export async function generateMetadata({
   const currentPage = parsePageParam(params.page);
   const categorySlug = params.category?.trim();
 
-  const isCategoryListingCanonical =
-    Boolean(categorySlug) &&
-    !normalizedQuery &&
-    !currentAccess &&
-    currentSort === "top" &&
-    currentPage === 1;
-  const hasFilters =
-    Boolean(normalizedQuery) ||
-    Boolean(categorySlug) ||
-    Boolean(currentAccess) ||
-    currentSort === "newest" ||
-    currentPage > 1;
-  const metadataPath = isCategoryListingCanonical
-    ? `/components?category=${encodeURIComponent(categorySlug ?? "")}`
-    : "/components";
+  const hasSearchQuery = Boolean(normalizedQuery);
+  const metadataPath = hasSearchQuery
+    ? "/components"
+    : buildComponentsPath({
+        category: categorySlug || undefined,
+        access: currentAccess,
+        sort: currentSort,
+        page: currentPage,
+      });
 
   return createPageMetadata({
     locale,
@@ -126,20 +120,17 @@ export async function generateMetadata({
       "CopyMyUI components",
     ],
     imagePath: "/seed-screenshots/harbor-metrics-deck-full.jpg",
-    noIndex: hasFilters && !isCategoryListingCanonical,
+    noIndex: hasSearchQuery,
   });
 }
 
-function buildComponentsHref(
-  locale: AppLocale,
-  params: {
-    q?: string;
-    category?: string;
-    access?: "free" | "premium";
-    sort?: "top" | "newest";
-    page?: number;
-  }
-) {
+function buildComponentsPath(params: {
+  q?: string;
+  category?: string;
+  access?: "free" | "premium";
+  sort?: "top" | "newest";
+  page?: number;
+}) {
   const searchParams = new URLSearchParams();
 
   if (params.q) {
@@ -163,7 +154,20 @@ function buildComponentsHref(
   }
 
   const query = searchParams.toString();
-  return withLocalePath(locale, query ? `/components?${query}` : "/components");
+  return query ? `/components?${query}` : "/components";
+}
+
+function buildComponentsHref(
+  locale: AppLocale,
+  params: {
+    q?: string;
+    category?: string;
+    access?: "free" | "premium";
+    sort?: "top" | "newest";
+    page?: number;
+  }
+) {
+  return withLocalePath(locale, buildComponentsPath(params));
 }
 
 export default async function ComponentsPage({
