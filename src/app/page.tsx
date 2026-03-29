@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Bookmark, ChevronRight, Grid2X2, Library, Sparkles } from "lucide-react";
+import { Bookmark, ChevronRight, Grid2X2, Library, Search, Sparkles } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
 import { ComponentCard } from "@/components/component-card";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { CategoryIcon } from "@/lib/category-icons";
 import { createPageMetadata } from "@/lib/seo";
 import { getHomepageData, listBrowseRailCategories } from "@/lib/server/component-service";
 import { getViewer } from "@/lib/viewer";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { locale, messages } = await getI18n();
@@ -65,6 +67,16 @@ export default async function Home() {
               <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                 {messages.home.description}
               </p>
+              <Link
+                href={withLocalePath(locale, "/components")}
+                className={cn(
+                  buttonVariants({ variant: "default", size: "sm" }),
+                  "mt-5 inline-flex h-11 rounded-full px-5"
+                )}
+              >
+                <Search className="size-4" />
+                {messages.home.exploreComponents}
+              </Link>
             </div>
 
             <div className="mt-5 border-t border-black/8 pt-5">

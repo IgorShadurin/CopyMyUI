@@ -282,7 +282,7 @@ export default async function CreatorProfilePage({
                 <span className="font-semibold text-foreground">{creator.componentCount}</span> ·{" "}
                 {messages.profilePage.premiumCount}:{" "}
                 <span className="font-semibold text-foreground">{creator.premiumCount}</span> ·{" "}
-                {messages.profilePage.freeSectionTitle}:{" "}
+                {messages.profilePage.freeSectionEyebrow}:{" "}
                 <span className="font-semibold text-foreground">{freeCount}</span>
               </p>
               {topCreatorCategories.length > 0 ? (

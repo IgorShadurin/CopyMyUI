@@ -123,12 +123,15 @@ export const test = base.extend<{
       ALLOW_DEV_SESSION: "true",
       AUTH_SECRET: "copymyui-playwright-secret",
       COPYMYUI_UPLOAD_NAMESPACE: workspace.uploadNamespace,
+      COPYMYUI_SEED_PROFILE: "e2e",
       DATABASE_URL: workspace.dbUrl,
       MODERATOR_EMAILS: "moderator@copymyui.dev",
       NEXTAUTH_URL: baseURL,
       NEXT_DIST_DIR: E2E_BUILD_DIR,
+      NEXT_PUBLIC_LOCALE_ROUTING_MODE: "path",
       NEXT_TELEMETRY_DISABLED: "1",
       NODE_ENV: "production",
+      LOCALE_ROUTING_MODE: "path",
     };
 
     let serverProcess: ChildProcess | null = null;

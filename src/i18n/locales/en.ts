@@ -89,7 +89,7 @@ export const en = {
     }
   },
   "home": {
-    "title": "Build your SwiftUI library.",
+    "title": "Build your SwiftUI component library.",
     "description": "Ship faster with ready-to-use SwiftUI components and production-ready code, so you do not rebuild common screens from scratch.",
     "searchPlaceholder": "Search titles, descriptions, creators, dashboards...",
     "exploreComponents": "Find",
@@ -201,9 +201,9 @@ export const en = {
     "componentCount": "Approved components",
     "premiumCount": "Premium components",
     "freeSectionEyebrow": "Shared free components",
-    "freeSectionTitle": "Releases",
+    "freeSectionTitle": "Approved free releases",
     "premiumSectionEyebrow": "Premium components",
-    "premiumSectionTitle": "Premium"
+    "premiumSectionTitle": "Approved premium releases"
   },
   "categoryPage": {
     "eyebrow": "Category collection",

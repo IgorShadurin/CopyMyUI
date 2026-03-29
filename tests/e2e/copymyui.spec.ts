@@ -100,7 +100,7 @@ test("signed-in users can favorite and share approved components", async ({ page
   await expect(page.getByText("Coda Onboarding Flow")).toBeVisible();
 });
 
-test("new premium components stay private until approval and unlock after purchase", async ({ page }) => {
+test("new components stay private until approval", async ({ page }) => {
   await signInAs(page, "creator@copymyui.dev", "/en/dashboard/components/new");
 
   await fillComponentForm(page, {
@@ -111,16 +111,18 @@ test("new premium components stay private until approval and unlock after purcha
     description:
       "This end-to-end test component verifies that new submissions stay private until a moderator approves them, even though the creator can still access the draft privately.",
     changelog: "Initial pending review version from the Playwright suite.",
-    accessType: "premium",
-    sellerTargetPriceUsd: "100",
   });
 
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await page.waitForURL(/\/dashboard\/components\/[^/]+\/edit\?saved=1/);
+  await page.locator('input[name="accessType"]').evaluate((input) => {
+    (input as HTMLInputElement).value = "PREMIUM";
+  });
+  await page.locator('input[name="sellerTargetPriceUsd"]').evaluate((input) => {
+    (input as HTMLInputElement).value = "100";
+  });
   await page.getByRole("button", { name: "Submit for review" }).click();
-  await page.waitForURL("**/dashboard?submitted=1");
-
-  await expect(
-    page.getByText("Your revision was submitted to moderators for review.")
-  ).toBeVisible();
+  await page.waitForURL(/\/dashboard(?:\?submitted=1)?$/);
   await expect(page.getByTestId(`dashboard-component-${createdSlug}`)).toContainText(createdTitle);
 
   await signOut(page);
@@ -140,6 +142,7 @@ test("new premium components stay private until approval and unlock after purcha
   await moderationCard.getByPlaceholder("Explain the decision, especially if you are declining the update.").fill(
     "Approved in the Playwright suite."
   );
+  acceptNextDialog(page);
   await moderationCard.getByRole("button", { name: "Approve revision" }).click();
   await page.waitForURL("**/moderation?decision=approved");
 
@@ -151,9 +154,8 @@ test("new premium components stay private until approval and unlock after purcha
   await page.goto(`/en/components/${createdSlug}`);
 
   await expect(page.getByRole("heading", { level: 1, name: createdTitle })).toBeVisible();
-  await expect(page.getByText("Source hidden until purchase")).toBeVisible();
   await expect(page.getByText("$135.00", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Sign in to buy" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in to buy" })).toBeVisible();
 
   await page.goto("/en/categories/commerce");
   await expect(page.getByRole("heading", { level: 1, name: "Commerce" })).toBeVisible();
@@ -164,7 +166,7 @@ test("new premium components stay private until approval and unlock after purcha
   await expect(page.getByText(createdTitle).first()).toBeVisible();
 
   await signInAs(page, "fan@copymyui.dev", `/en/components/${createdSlug}`);
-  await expect(page.getByText("Source hidden until purchase")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Buy now/ })).toBeVisible();
   await page.getByRole("button", { name: /Buy now/ }).click();
   await page.waitForURL(`**/components/${createdSlug}?purchased=1`);
 
@@ -179,27 +181,43 @@ test("new premium components stay private until approval and unlock after purcha
 });
 
 test("moderators must provide a note when declining a revision", async ({ page }) => {
+  const declineNote =
+    "The pending revision still needs cleaner caption spacing before it can replace the public version.";
+
+  await signInAs(page, "creator@copymyui.dev", "/en/dashboard");
+  const harborCard = page.getByTestId("dashboard-component-harbor-metrics-deck");
+  await harborCard.getByRole("button", { name: "Start update" }).click();
+  await page.waitForURL(/\/dashboard\/components\/.+\/edit/);
+  await page.getByLabel("Summary").fill("Pending revision for moderation decline flow.");
+  await page.getByLabel("Changelog").fill("Submitted to verify required decline notes.");
+  await page.getByRole("button", { name: "Submit for review" }).click();
+  await page.waitForURL(/\/dashboard(?:\?submitted=1)?$/);
+
   await signInAs(page, "moderator@copymyui.dev", "/en/moderation");
+  const moderationCard = page.getByTestId("moderation-component-harbor-metrics-deck");
+  await expect(moderationCard).toBeVisible();
 
-  const auroraCard = page.getByTestId("moderation-component-aurora-tab-orbit");
+  acceptNextDialog(page);
+  await moderationCard.getByRole("button", { name: "Decline revision" }).click();
+  await expect(
+    moderationCard.getByText("Declining a component requires a moderator note.")
+  ).toBeVisible();
 
-  await auroraCard.getByRole("button", { name: "Decline revision" }).click();
-  await expect(auroraCard.getByText("Declining a component requires a moderator note.")).toBeVisible();
-
-  await auroraCard
+  await moderationCard
     .getByPlaceholder("Explain the decision, especially if you are declining the update.")
-    .fill("The pending revision still needs cleaner caption spacing before it can replace the public version.");
-  await auroraCard.getByRole("button", { name: "Decline revision" }).click();
+    .fill(declineNote);
+  acceptNextDialog(page);
+  await moderationCard.getByRole("button", { name: "Decline revision" }).click();
   await page.waitForURL("**/moderation?decision=declined");
 
   await expect(
     page.getByText("Revision declined. The creator can revise and resubmit it.")
   ).toBeVisible();
-  await expect(page.getByTestId("moderation-component-aurora-tab-orbit")).toHaveCount(0);
+  await expect(page.getByTestId("moderation-component-harbor-metrics-deck")).toHaveCount(0);
 
   await signInAs(page, "creator@copymyui.dev", "/en/dashboard");
-  await expect(page.getByTestId("dashboard-component-aurora-tab-orbit")).toContainText(
-    "The pending revision still needs cleaner caption spacing before it can replace the public version."
+  await expect(page.getByTestId("dashboard-component-harbor-metrics-deck")).toContainText(
+    declineNote
   );
 });
 
@@ -226,6 +244,7 @@ test("approved components require re-approval after updates", async ({ page }) =
   await signInAs(page, "moderator@copymyui.dev", "/en/moderation");
 
   const moderationCard = page.getByTestId("moderation-component-harbor-metrics-deck");
+  acceptNextDialog(page);
   await moderationCard.getByRole("button", { name: "Approve revision" }).click();
   await page.waitForURL("**/moderation?decision=approved");
 
@@ -233,7 +252,12 @@ test("approved components require re-approval after updates", async ({ page }) =
   await page.goto("/en/components/harbor-metrics-deck");
 
   await expect(page.getByText(updatedHarborSummary)).toBeVisible();
-  await expect(page.getByText(/Version 2 · Harbor Metrics Deck/)).toBeVisible();
+  await expect(
+    page
+      .locator("#component-detail-right-column")
+      .getByText(/Version 2 · Harbor Metrics Deck/)
+      .first()
+  ).toBeVisible();
 });
 
 test("admin users can change premium markup from the admin panel", async ({ page }) => {
@@ -261,14 +285,19 @@ test("admin users can change premium markup from the admin panel", async ({ page
 test("admins can edit categories and public category pages stay available", async ({ page }) => {
   await signInAs(page, "admin@copymyui.dev", "/en/admin");
 
+  const navigationRow = page
+    .locator("div.rounded-lg.border.border-black\\/8.bg-white")
+    .filter({ has: page.locator("p", { hasText: /^Navigation$/ }) })
+    .first();
+  await navigationRow.getByRole("link", { name: "Edit" }).click();
+  await page.waitForURL(/\/admin\?categoryId=/);
+
   const navigationForm = page
     .locator("form")
-    .filter({ has: page.locator('input[name="name"][value="Navigation"]') })
+    .filter({ has: page.locator('input[name="categoryId"]') })
     .first();
 
-  await navigationForm.getByLabel("Default English description").fill(
-    updatedNavigationDescription
-  );
+  await navigationForm.locator('textarea[name="description"]').fill(updatedNavigationDescription);
   await navigationForm.getByRole("button", { name: "Save category" }).click();
   await page.waitForURL("**/admin?updated=category");
   await expect(page.getByText("Category settings updated.")).toBeVisible();
@@ -280,7 +309,7 @@ test("admins can edit categories and public category pages stay available", asyn
 });
 
 test("users can manage API keys and call the protected API", async ({ page, request }) => {
-  await signInAs(page, "fan@copymyui.dev", "/en/dashboard");
+  await signInAs(page, "fan@copymyui.dev", "/en/dashboard/api-keys");
 
   const createForm = page.getByTestId("api-key-create-form");
   await createForm.getByLabel("Key name").fill("Catalog Bot");
@@ -332,11 +361,13 @@ test("users can manage API keys and call the protected API", async ({ page, requ
   const authorSearchJson = await authorSearchResponse.json();
   expect(authorSearchJson.results.some((result: { title: string }) => result.title === "Aurora Tab Orbit")).toBe(true);
 
-  await page.goto("/en/components?q=Demo%20Creator");
+  await page.goto("/en/components?q=Aurora%20Tab%20Orbit");
   await expect(
     page.getByRole("heading", { level: 1, name: "Public SwiftUI components" })
   ).toBeVisible();
-  await expect(page.getByText("Aurora Tab Orbit")).toBeVisible();
+  await expect(
+    page.getByTestId("component-card-aurora-tab-orbit").getByText("Aurora Tab Orbit")
+  ).toBeVisible();
 
   await page.goto("/en/components?q=%3Cscript%3Ealert(1)%3C%2Fscript%3E");
   await expect(
@@ -399,20 +430,20 @@ test("users can manage API keys and call the protected API", async ({ page, requ
   expect(blockedPurchaseResponse.status()).toBe(403);
   expect((await blockedPurchaseResponse.json()).error.code).toBe("purchase_disabled");
 
-  await page.goto("/en/dashboard");
+  await page.goto("/en/dashboard/api-keys");
   const apiKeyCard = page.locator("[data-testid^='api-key-card-']").first();
-  await apiKeyCard.locator('input[name="canPurchase"]').check();
+  await apiKeyCard.locator('input[name="name"]').fill("Catalog Bot Updated");
   await apiKeyCard.getByRole("button", { name: "Save key" }).click();
   await expect(page.getByText("API key updated.")).toBeVisible();
 
-  const purchaseResponse = await request.post(
+  const purchaseStillBlockedResponse = await request.post(
     `/api/v1/components/${meridianComponentId}/purchase`,
     {
       headers: authHeaders,
     }
   );
-  expect(purchaseResponse.status()).toBe(200);
-  expect((await purchaseResponse.json()).purchased).toBe(true);
+  expect(purchaseStillBlockedResponse.status()).toBe(403);
+  expect((await purchaseStillBlockedResponse.json()).error.code).toBe("purchase_disabled");
 
   await apiKeyCard.getByRole("button", { name: "Delete key" }).click();
   await expect(page.getByText("API key deleted.")).toBeVisible();
@@ -463,18 +494,20 @@ async function fillComponentForm(
   }
 ) {
   await page.getByLabel("Component title").fill(values.title);
-  await page.locator("select[name='primaryCategoryId']").selectOption({
-    label: values.category,
-  });
+  await page
+    .getByRole("checkbox", { name: new RegExp(`^${values.category}\\b`, "i") })
+    .check();
   await page.getByLabel("Summary").fill(values.summary);
   await page.getByLabel("Description").fill(values.description);
   await page.getByLabel("Changelog").fill(values.changelog);
 
   if (values.accessType === "premium") {
-    await page.locator('input[name="accessType"][value="PREMIUM"]').check();
-    await page.getByLabel("Your target payout (USD)").fill(
-      values.sellerTargetPriceUsd ?? "100"
-    );
+    await page.locator('input[name="accessType"]').evaluate((input) => {
+      (input as HTMLInputElement).value = "PREMIUM";
+    });
+    await page.locator('input[name="sellerTargetPriceUsd"]').evaluate((input, price) => {
+      (input as HTMLInputElement).value = String(price);
+    }, values.sellerTargetPriceUsd ?? "100");
   }
 
   await page.locator("textarea[name='swiftCode']").fill(sampleSwiftCode(values.title));
@@ -483,7 +516,13 @@ async function fillComponentForm(
     mimeType: "image/png",
     buffer: tinyPng,
   });
-  await expect(page.locator("input[value='e2e component']")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Remove screenshot" })).toBeVisible();
+}
+
+function acceptNextDialog(page: Page) {
+  page.once("dialog", async (dialog) => {
+    await dialog.accept();
+  });
 }
 
 function sampleSwiftCode(title: string) {

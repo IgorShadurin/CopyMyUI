@@ -27,6 +27,7 @@ const execFileAsync = promisify(execFile);
 const SEED_SUBMITTED_AT = new Date("2026-03-18T09:00:00.000Z");
 const SEED_REVIEWED_AT = new Date("2026-03-18T12:00:00.000Z");
 const isSafeSeedMode = process.argv.includes("--safe");
+const seedProfile = process.env.COPYMYUI_SEED_PROFILE ?? "default";
 
 const categories = [
   {
@@ -433,6 +434,7 @@ const sampleComponents: SeedComponent[] = [
     featured: true,
     seed: 22,
     pattern: "galleryStage",
+    ownerIdOverride: "fan@copymyui.dev",
   },
   {
     slug: "tidal-episode-queue",
@@ -2344,7 +2346,8 @@ async function main() {
     ),
     ...portComponents,
   ];
-  const publicSeedComponents = preservedSeedComponents;
+  const publicSeedComponents =
+    seedProfile === "e2e" ? sampleComponents : preservedSeedComponents;
 
   for (const category of categories) {
     const categorySlug = slugify(category.name, { lower: true, strict: true });
@@ -2534,7 +2537,10 @@ async function main() {
       (sellerTargetPriceCents !== null
         ? ComponentAccessType.PREMIUM
         : ComponentAccessType.FREE);
-    const ownerId = publishedOwnerId;
+    const ownerId =
+      (component.ownerIdOverride
+        ? users.get(component.ownerIdOverride)?.id ?? null
+        : null) ?? publishedOwnerId;
 
     const categoryIds = [
       category.id,
@@ -2606,6 +2612,33 @@ async function main() {
         publishedAt: approvedRevision.reviewedAt,
       },
     });
+
+    if (seedProfile === "e2e" && component.slug === "aurora-tab-orbit") {
+      await prisma.componentRevision.create({
+        data: {
+          componentId: createdComponent.id,
+          version: 2,
+          title: component.title,
+          summary: "Pending revision with tighter spacing and updated icon rhythm.",
+          description: component.description,
+          swiftCode:
+            component.swiftCodeOverride ??
+            seedCodeBySlug.get(component.slug) ??
+            swiftCodeSnippet(component),
+          changelog: "Pending revision created for moderation-flow test coverage.",
+          accessType,
+          sellerTargetPriceCents,
+          status: ComponentStatus.PENDING_REVIEW,
+          submittedAt: new Date(SEED_SUBMITTED_AT),
+          screenshots: {
+            create: screenshots.map((screenshot, index) => ({
+              ...screenshot,
+              sortOrder: index,
+            })),
+          },
+        },
+      });
+    }
 
     if (component.seed <= 8 || component.featured) {
       await prisma.favorite.create({

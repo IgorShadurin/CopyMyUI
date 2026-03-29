@@ -91,10 +91,10 @@ export const es: Messages = {
     }
   },
   "home": {
-    "title": "Crea tu biblioteca SwiftUI.",
+    "title": "Crea tu biblioteca de componentes SwiftUI.",
     "description": "Publica más rápido con componentes SwiftUI listos para usar y código listo para producción, para no volver a crear pantallas comunes desde cero.",
     "searchPlaceholder": "Buscar títulos, descripciones, creadores y dashboards...",
-    "exploreComponents": "Buscar",
+    "exploreComponents": "Explorar",
     "topRatedNow": "Más guardados ahora",
     "freshlyApproved": "Recién añadido",
     "openComponent": "Abrir componente",

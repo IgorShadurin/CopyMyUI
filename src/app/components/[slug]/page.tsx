@@ -12,6 +12,7 @@ import { FavoriteButton } from "@/components/favorite-button";
 import { GoogleSignInModalButton } from "@/components/google-signin-modal-button";
 import { PageNotice } from "@/components/page-notice";
 import { SeoBreadcrumbs } from "@/components/seo-breadcrumbs";
+import { ShareLinks } from "@/components/share-links";
 import { StatusBadge } from "@/components/status-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AppActionButton } from "@/components/ui/app-action-button";
@@ -463,6 +464,19 @@ export default async function ComponentDetailPage({
                   ) : null}
                 </div>
               </div>
+              {!component.isPrivateView ? (
+                <div className="border-t border-black/6 pt-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+                    {messages.share.share}
+                  </p>
+                  <div className="mt-2">
+                    <ShareLinks
+                      title={component.title}
+                      path={withLocalePath(locale, `/components/${component.slug}`)}
+                    />
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -496,6 +510,7 @@ export default async function ComponentDetailPage({
           <ComponentCardList
             components={relatedByCategory.slice(0, 8)}
             className="gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4"
+            showFavorite={false}
           />
         </section>
       ) : null}
@@ -516,6 +531,7 @@ export default async function ComponentDetailPage({
           <ComponentCardList
             components={relatedByCreator.slice(0, 8)}
             className="gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-4"
+            showFavorite={false}
           />
         </section>
       ) : null}

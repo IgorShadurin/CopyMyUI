@@ -27,6 +27,8 @@ export default async function globalSetup() {
 
   await runCommand(getCommand("npm"), ["run", "build"], {
     ...process.env,
+    LOCALE_ROUTING_MODE: "path",
+    NEXT_PUBLIC_LOCALE_ROUTING_MODE: "path",
     NEXT_DIST_DIR: E2E_BUILD_DIR,
     NEXT_TELEMETRY_DISABLED: "1",
   });
