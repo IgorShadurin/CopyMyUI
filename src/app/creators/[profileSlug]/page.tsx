@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { Crown, Layers3 } from "lucide-react";
 
@@ -125,17 +125,14 @@ export async function generateMetadata({
     return {};
   }
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(creator.componentCount / CREATOR_COMPONENTS_PAGE_SIZE)
-  );
-  const page = Math.min(currentPage, totalPages);
   const pageSuffix =
-    page > 1 ? ` · ${messages.categoryPage.paginationPage} ${page}` : "";
+    currentPage > 1
+      ? ` · ${messages.categoryPage.paginationPage} ${currentPage}`
+      : "";
 
   return createPageMetadata({
     locale,
-    path: buildCreatorPagePath(profileSlug, page),
+    path: buildCreatorPagePath(profileSlug, currentPage),
     title: `${profileTitle(creator.name)}${pageSuffix}`,
     description: `${messages.profilePage.description} ${messages.profilePage.componentCount}: ${creator.componentCount}. ${messages.profilePage.premiumCount}: ${creator.premiumCount}.`,
     keywords: [
@@ -162,6 +159,9 @@ export default async function CreatorProfilePage({
   const { profileSlug } = await params;
   const query = await searchParams;
   const requestedPage = parsePageParam(query.page);
+  if (query.page && requestedPage === 1) {
+    redirect(withLocalePath(locale, `/creators/${profileSlug}`));
+  }
   const creator = await getPublicCreatorProfile(profileSlug, viewer?.id);
 
   if (!creator) {
@@ -173,7 +173,10 @@ export default async function CreatorProfilePage({
     1,
     Math.ceil(totalCount / CREATOR_COMPONENTS_PAGE_SIZE)
   );
-  const currentPage = Math.min(requestedPage, totalPages);
+  if (requestedPage > totalPages) {
+    notFound();
+  }
+  const currentPage = requestedPage;
   const pagedComponents = creator.components.slice(
     (currentPage - 1) * CREATOR_COMPONENTS_PAGE_SIZE,
     currentPage * CREATOR_COMPONENTS_PAGE_SIZE

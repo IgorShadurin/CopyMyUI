@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 import { ArrowUpDown, Crown, PanelTop, RotateCcw } from "lucide-react";
 
 import { BrowseRail } from "@/components/browse-rail";
@@ -219,6 +220,24 @@ export default async function ComponentsPage({
   const params = await searchParams;
   const normalizedQuery = normalizeSearchQuery(params.q);
   const requestedPage = parsePageParam(params.page);
+  const currentAccess: "free" | "premium" | undefined =
+    params.access === "premium"
+      ? "premium"
+      : params.access === "free"
+        ? "free"
+        : undefined;
+  const currentSort = params.sort === "newest" ? "newest" : "top";
+  if (params.sort === "top" || Boolean(params.page && requestedPage === 1)) {
+    redirect(
+      buildComponentsHref(locale, {
+        q: normalizedQuery || undefined,
+        category: params.category || undefined,
+        access: currentAccess,
+        sort: "top",
+        page: requestedPage,
+      })
+    );
+  }
   const viewer = await getViewer();
   const [browseRailData, allComponents] = await Promise.all([
     listBrowseRailCategories(),
@@ -239,18 +258,14 @@ export default async function ComponentsPage({
   ]);
   const totalCount = allComponents.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / COMPONENTS_PAGE_SIZE));
-  const currentPage = Math.min(requestedPage, totalPages);
+  if (requestedPage > totalPages) {
+    notFound();
+  }
+  const currentPage = requestedPage;
   const components = allComponents.slice(
     (currentPage - 1) * COMPONENTS_PAGE_SIZE,
     currentPage * COMPONENTS_PAGE_SIZE
   );
-  const currentAccess: "free" | "premium" | undefined =
-    params.access === "premium"
-      ? "premium"
-      : params.access === "free"
-        ? "free"
-        : undefined;
-  const currentSort = params.sort === "newest" ? "newest" : "top";
   const listingBaseParams = {
     q: normalizedQuery || undefined,
     category: params.category || undefined,

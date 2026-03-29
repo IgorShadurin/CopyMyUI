@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowUpDown, Crown } from "lucide-react";
 
@@ -113,16 +113,13 @@ export async function generateMetadata({
 
   const category = translateCategory(categoryPage.category, messages, locale);
   const pageSuffix =
-    categoryPage.pagination.currentPage > 1
-      ? ` · ${messages.categoryPage.paginationPage} ${categoryPage.pagination.currentPage}`
+    currentPage > 1
+      ? ` · ${messages.categoryPage.paginationPage} ${currentPage}`
       : "";
 
   return createPageMetadata({
     locale,
-    path: buildCategoryPagePath(
-      categoryPage.category.slug,
-      categoryPage.pagination.currentPage
-    ),
+    path: buildCategoryPagePath(categoryPage.category.slug, currentPage),
     title: `${category.name} · ${messages.explorePage.title}${pageSuffix}`,
     description: `${category.description} ${messages.categoryPage.approvedCount}: ${categoryPage.pagination.totalCount}.`,
     keywords: [
@@ -147,6 +144,9 @@ export default async function CategoryPage({
   const { slug } = await params;
   const query = await searchParams;
   const requestedPage = parsePageParam(query.page);
+  if (query.page && requestedPage === 1) {
+    redirect(withLocalePath(locale, `/categories/${slug}`));
+  }
   const [browseRailData, categoryPage] = await Promise.all([
     listBrowseRailCategories(),
     getPublicCategoryPageData(slug, viewer?.id, {
@@ -156,6 +156,9 @@ export default async function CategoryPage({
   ]);
 
   if (!categoryPage) {
+    notFound();
+  }
+  if (requestedPage > categoryPage.pagination.totalPages) {
     notFound();
   }
 
