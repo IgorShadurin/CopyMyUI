@@ -45,6 +45,14 @@ type SearchParams = Promise<{
 
 const COMPONENTS_PAGE_SIZE = 25;
 
+function isSearchPlaceholderQuery(query: string) {
+  const normalized = query.trim().toLowerCase();
+  return (
+    normalized === "{search_term_string}" ||
+    normalized === "%7bsearch_term_string%7d"
+  );
+}
+
 function parsePageParam(pageValue: string | undefined) {
   if (!pageValue) {
     return 1;
@@ -98,6 +106,9 @@ export async function generateMetadata({
   const { locale, messages } = await getI18n();
   const params = await searchParams;
   const normalizedQuery = normalizeSearchQuery(params.q);
+  const isPlaceholderQuery =
+    Boolean(normalizedQuery) && isSearchPlaceholderQuery(normalizedQuery);
+  const effectiveQuery = isPlaceholderQuery ? "" : normalizedQuery;
   const currentAccess: "free" | "premium" | undefined =
     params.access === "premium"
       ? "premium"
@@ -109,10 +120,11 @@ export async function generateMetadata({
   const categorySlug = params.category?.trim();
   const categoryLabel = toCategoryLabel(categorySlug);
 
-  const hasSearchQuery = Boolean(normalizedQuery);
+  const hasSearchQuery = Boolean(effectiveQuery);
   const metadataPath = hasSearchQuery
     ? "/components"
     : buildComponentsPath({
+        q: effectiveQuery || undefined,
         category: categorySlug || undefined,
         access: currentAccess,
         sort: currentSort,
@@ -219,6 +231,9 @@ export default async function ComponentsPage({
   const { locale, messages } = await getI18n();
   const params = await searchParams;
   const normalizedQuery = normalizeSearchQuery(params.q);
+  const isPlaceholderQuery =
+    Boolean(normalizedQuery) && isSearchPlaceholderQuery(normalizedQuery);
+  const effectiveQuery = isPlaceholderQuery ? "" : normalizedQuery;
   const requestedPage = parsePageParam(params.page);
   const currentAccess: "free" | "premium" | undefined =
     params.access === "premium"
@@ -227,6 +242,17 @@ export default async function ComponentsPage({
         ? "free"
         : undefined;
   const currentSort = params.sort === "newest" ? "newest" : "top";
+  if (isPlaceholderQuery) {
+    redirect(
+      buildComponentsHref(locale, {
+        q: undefined,
+        category: params.category || undefined,
+        access: currentAccess,
+        sort: currentSort,
+        page: requestedPage,
+      })
+    );
+  }
   if (params.sort === "top" || Boolean(params.page && requestedPage === 1)) {
     redirect(
       buildComponentsHref(locale, {
@@ -243,7 +269,7 @@ export default async function ComponentsPage({
     listBrowseRailCategories(),
     listPublicComponents(
       {
-        query: normalizedQuery,
+        query: effectiveQuery,
         categorySlug: params.category,
         accessType:
           params.access === "premium"
@@ -267,7 +293,7 @@ export default async function ComponentsPage({
     currentPage * COMPONENTS_PAGE_SIZE
   );
   const listingBaseParams = {
-    q: normalizedQuery || undefined,
+    q: effectiveQuery || undefined,
     category: params.category || undefined,
     access: currentAccess,
     sort: currentSort as "top" | "newest",
@@ -288,7 +314,7 @@ export default async function ComponentsPage({
     sort: "top",
   });
   const hasFilters =
-    Boolean(normalizedQuery) ||
+    Boolean(effectiveQuery) ||
     Boolean(params.category) ||
     params.access === "premium" ||
     params.access === "free" ||

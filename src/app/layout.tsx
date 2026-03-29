@@ -81,7 +81,6 @@ export default async function RootLayout({
   const { locale, messages } = await getI18n();
   const viewer = await getViewer();
   const websiteUrl = getAbsoluteLocaleUrl(locale, "/");
-  const componentsUrl = getAbsoluteLocaleUrl(locale, "/components");
   const organizationJsonLd = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -95,11 +94,6 @@ export default async function RootLayout({
     name: APP_NAME,
     url: websiteUrl,
     inLanguage: locale,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${componentsUrl}?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
   };
 
   return (
