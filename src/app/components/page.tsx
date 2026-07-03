@@ -21,7 +21,13 @@ import { type AppLocale } from "@/i18n/config";
 import { getI18n, translateCategory } from "@/i18n/server";
 import { withLocalePath } from "@/i18n/routing";
 import { CategoryIcon } from "@/lib/category-icons";
-import { createPageMetadata, getAbsoluteLocaleUrl } from "@/lib/seo";
+import {
+  buildComponentsPageMetadata,
+  buildComponentsPath,
+  isSearchPlaceholderQuery,
+  parseComponentsPageParam,
+} from "@/lib/components-page-metadata";
+import { getAbsoluteLocaleUrl } from "@/lib/seo";
 import { normalizeSearchQuery } from "@/lib/search";
 import {
   listBrowseRailCategories,
@@ -44,23 +50,6 @@ type SearchParams = Promise<{
 }>;
 
 const COMPONENTS_PAGE_SIZE = 25;
-
-function isSearchPlaceholderQuery(query: string) {
-  const normalized = query.trim().toLowerCase();
-  return (
-    normalized === "{search_term_string}" ||
-    normalized === "%7bsearch_term_string%7d"
-  );
-}
-
-function parsePageParam(pageValue: string | undefined) {
-  if (!pageValue) {
-    return 1;
-  }
-
-  const parsed = Number.parseInt(pageValue, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
 
 function getPaginationTokens(currentPage: number, totalPages: number) {
   const tokens: Array<number | "ellipsis-left" | "ellipsis-right"> = [];
@@ -94,10 +83,6 @@ function getPaginationTokens(currentPage: number, totalPages: number) {
   return tokens;
 }
 
-function toCategoryLabel(slug: string | undefined) {
-  return slug ? slug.replaceAll("-", " ") : null;
-}
-
 export async function generateMetadata({
   searchParams,
 }: {
@@ -105,109 +90,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, messages } = await getI18n();
   const params = await searchParams;
-  const normalizedQuery = normalizeSearchQuery(params.q);
-  const isPlaceholderQuery =
-    Boolean(normalizedQuery) && isSearchPlaceholderQuery(normalizedQuery);
-  const effectiveQuery = isPlaceholderQuery ? "" : normalizedQuery;
-  const currentAccess: "free" | "premium" | undefined =
-    params.access === "premium"
-      ? "premium"
-      : params.access === "free"
-        ? "free"
-        : undefined;
-  const currentSort = params.sort === "newest" ? "newest" : "top";
-  const currentPage = parsePageParam(params.page);
-  const categorySlug = params.category?.trim();
-  const categoryLabel = toCategoryLabel(categorySlug);
-
-  const hasSearchQuery = Boolean(effectiveQuery);
-  const metadataPath = hasSearchQuery
-    ? "/components"
-    : buildComponentsPath({
-        q: effectiveQuery || undefined,
-        category: categorySlug || undefined,
-        access: currentAccess,
-        sort: currentSort,
-        page: currentPage,
-      });
-  const metadataTitleParts = [
-    messages.explorePage.title,
-    categoryLabel,
-    currentAccess === "premium"
-      ? messages.explorePage.premiumOnly
-      : currentAccess === "free"
-        ? messages.explorePage.freeOnly
-        : null,
-    currentSort === "newest"
-      ? messages.explorePage.newest
-      : messages.explorePage.topRated,
-    currentPage > 1 ? `${messages.categoryPage.paginationPage} ${currentPage}` : null,
-  ].filter(Boolean);
-  const metadataTitle = metadataTitleParts.join(" · ");
-  const metadataDescriptionTraits = [
-    categoryLabel,
-    currentAccess === "premium"
-      ? messages.explorePage.premiumOnly
-      : currentAccess === "free"
-        ? messages.explorePage.freeOnly
-        : null,
-    currentSort === "newest"
-      ? messages.explorePage.newest
-      : messages.explorePage.topRated,
-  ].filter(Boolean);
-  const metadataDescription =
-    metadataDescriptionTraits.length > 0
-      ? `${messages.explorePage.description} ${metadataDescriptionTraits.join(" · ")}.`
-      : messages.explorePage.description;
-
-  return createPageMetadata({
+  return buildComponentsPageMetadata({
     locale,
-    path: metadataPath,
-    title: metadataTitle,
-    description: metadataDescription,
-    keywords: [
-      "SwiftUI component gallery",
-      "SwiftUI search",
-      "free SwiftUI components",
-      "premium SwiftUI components",
-      "CopyMyUI components",
-    ],
-    imagePath: "/seed-screenshots/harbor-metrics-deck-full.jpg",
-    noIndex: hasSearchQuery,
+    messages,
+    searchParams: params,
   });
-}
-
-function buildComponentsPath(params: {
-  q?: string;
-  category?: string;
-  access?: "free" | "premium";
-  sort?: "top" | "newest";
-  page?: number;
-}) {
-  const searchParams = new URLSearchParams();
-
-  if (params.q) {
-    searchParams.set("q", params.q);
-  }
-
-  if (params.category) {
-    searchParams.set("category", params.category);
-  }
-
-  if (params.access) {
-    searchParams.set("access", params.access);
-  }
-
-  if (params.sort === "newest") {
-    searchParams.set("sort", "newest");
-  }
-
-  if (params.page && params.page > 1) {
-    searchParams.set("page", String(params.page));
-  }
-
-  const query = searchParams.toString();
-  return query ? `/components?${query}` : "/components";
 }
 
 function buildComponentsHref(
@@ -234,7 +121,7 @@ export default async function ComponentsPage({
   const isPlaceholderQuery =
     Boolean(normalizedQuery) && isSearchPlaceholderQuery(normalizedQuery);
   const effectiveQuery = isPlaceholderQuery ? "" : normalizedQuery;
-  const requestedPage = parsePageParam(params.page);
+  const requestedPage = parseComponentsPageParam(params.page);
   const currentAccess: "free" | "premium" | undefined =
     params.access === "premium"
       ? "premium"
