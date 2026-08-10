@@ -133,6 +133,15 @@ export const test = base.extend<{
       NODE_ENV: "production",
       LOCALE_ROUTING_MODE: "path",
     };
+    // Prisma's schema engine exits with a generic error when Playwright's
+    // FORCE_COLOR override is forwarded to the CLI process.
+    delete sharedEnv.FORCE_COLOR;
+    const schemaEnv: NodeJS.ProcessEnv = {
+      ...sharedEnv,
+      // Prisma 7.4's macOS schema engine exits before emitting diagnostics
+      // unless its native logger is initialized for a fresh SQLite database.
+      RUST_LOG: "info",
+    };
 
     let serverProcess: ChildProcess | null = null;
 
@@ -140,7 +149,7 @@ export const test = base.extend<{
       await runCommand(
         getCommand("npx"),
         ["prisma", "db", "push"],
-        sharedEnv,
+        schemaEnv,
         logs
       );
       await runCommand(getCommand("npx"), ["tsx", "prisma/seed.ts"], sharedEnv, logs);

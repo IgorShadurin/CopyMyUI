@@ -17,6 +17,7 @@ export const E2E_PORT_RANGE = {
   min: 20_000,
   max: 55_000,
 };
+const tempWorkspaceRoot = process.platform === "darwin" ? "/tmp" : os.tmpdir();
 
 export async function cleanupPath(targetPath: string) {
   await rm(targetPath, {
@@ -30,7 +31,9 @@ export function toSqliteUrl(dbPath: string) {
 }
 
 export async function createTempTestWorkspace(prefix: string): Promise<TempTestWorkspace> {
-  const rootDir = await mkdtemp(path.join(os.tmpdir(), `${prefix}-`));
+  // Prisma's SQLite schema engine cannot create a fresh database under the
+  // per-user macOS TMPDIR path, but the system /tmp path is supported.
+  const rootDir = await mkdtemp(path.join(tempWorkspaceRoot, `${prefix}-`));
   const dbPath = path.join(rootDir, "test.sqlite");
   const uploadNamespace = `${path.basename(rootDir)}-${randomUUID().slice(0, 8)}`;
 

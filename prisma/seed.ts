@@ -1,7 +1,7 @@
 import "dotenv/config";
 
 import { execFile } from "node:child_process";
-import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
@@ -2195,7 +2195,7 @@ async function cleanupSeedScreenshotAssets() {
         fileName === "audio-trimmer-full.jpg" || fileName === "audio-trimmer-preview.jpg";
 
       if ((isGeneratedSvg || isGeneratedJpeg) && !isAudioTrimmerAsset) {
-        await unlink(path.join(directory, fileName));
+        await rm(path.join(directory, fileName), { force: true });
       }
     })
   );
@@ -2496,15 +2496,17 @@ async function main() {
         ? users.get(component.ownerIdOverride)?.id ?? null
         : null) ?? publishedOwnerId;
 
-    const categoryIds = [
-      category.id,
-      ...(seedProfile === "e2e"
-        ? relatedCategoryNamesBySlug
-            .get(component.slug)
-            ?.map((name) => categoryByName.get(name)?.id)
-            .filter((value): value is string => Boolean(value)) ?? []
-        : []),
-    ].slice(0, 3);
+    const categoryIds = Array.from(
+      new Set([
+        category.id,
+        ...(seedProfile === "e2e"
+          ? relatedCategoryNamesBySlug
+              .get(component.slug)
+              ?.map((name) => categoryByName.get(name)?.id)
+              .filter((value): value is string => Boolean(value)) ?? []
+          : []),
+      ])
+    ).slice(0, 3);
 
     const createdComponent = await prisma.component.create({
       data: {
