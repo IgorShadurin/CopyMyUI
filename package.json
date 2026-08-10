@@ -12,6 +12,7 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:safe": "tsx prisma/seed.ts --safe",
+    "db:seed:compact": "tsx prisma/seed.ts --compact",
     "db:reset": "prisma db push --force-reset && npm run db:seed",
     "user:create": "tsx scripts/user-create.ts",
     "user:set-role": "tsx scripts/user-set-role.ts",

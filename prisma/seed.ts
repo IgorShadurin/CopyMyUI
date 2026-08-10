@@ -26,7 +26,8 @@ const prisma = new PrismaClient({
 const execFileAsync = promisify(execFile);
 const SEED_SUBMITTED_AT = new Date("2026-03-18T09:00:00.000Z");
 const SEED_REVIEWED_AT = new Date("2026-03-18T12:00:00.000Z");
-const isSafeSeedMode = process.argv.includes("--safe");
+const isCompactSeedMode = process.argv.includes("--compact");
+const isSafeSeedMode = process.argv.includes("--safe") || isCompactSeedMode;
 const seedProfile = process.env.COPYMYUI_SEED_PROFILE ?? "default";
 
 const categories = [
@@ -125,24 +126,6 @@ type SeedComponent = {
   accessTypeOverride?: ComponentAccessType;
   sellerTargetPriceCentsOverride?: number | null;
   ownerIdOverride?: string;
-};
-
-type PortManifestItem = {
-  slug: string;
-  title: string;
-  summary: string;
-  description: string;
-  changelog: string;
-  categoryName: CategoryName;
-  featured: boolean;
-  seed: number;
-  pattern: SeedPattern;
-  folderName: string;
-  screenshots: {
-    lightPath: string;
-    darkPath: string;
-  };
-  swiftFile: string;
 };
 
 const sampleComponents: SeedComponent[] = [
@@ -322,7 +305,7 @@ const sampleComponents: SeedComponent[] = [
     description:
       "Meridian Pricing Lens is a bright multi-plan pricing module designed for SaaS surfaces that need quick scanning and a clear featured tier.",
     changelog: "Added annual toggle treatment and stronger featured-plan framing.",
-    categoryName: "Commerce",
+    categoryName: "Paywall",
     featured: true,
     seed: 13,
     pattern: "pricingLens",
@@ -498,76 +481,16 @@ const sampleComponents: SeedComponent[] = [
   },
 ] as const;
 
-async function loadPortComponentsFromSeedManifests() {
-  const directory = path.join(process.cwd(), "prisma", "seed-code");
-  let entries: Array<{ name: string; isFile: () => boolean }> = [];
-
-  try {
-    entries = await readdir(directory, { withFileTypes: true });
-  } catch {
-    return [] as SeedComponent[];
-  }
-
-  const manifestFiles = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith("-port-components.json"))
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b));
-
-  const components: SeedComponent[] = [];
-
-  for (const fileName of manifestFiles) {
-    let manifest: PortManifestItem[];
-    try {
-      const rawManifest = await readFile(path.join(directory, fileName), "utf8");
-      manifest = JSON.parse(rawManifest) as PortManifestItem[];
-    } catch {
-      continue;
-    }
-
-    for (const item of manifest) {
-      const lightDimensions = await getImageDimensionsFromPublicPath(item.screenshots.lightPath);
-      const darkDimensions = await getImageDimensionsFromPublicPath(item.screenshots.darkPath);
-
-      components.push({
-        slug: item.slug,
-        title: item.title,
-        summary: item.summary,
-        description: item.description,
-        changelog: item.changelog,
-        categoryName: item.categoryName,
-        featured: item.featured,
-        seed: item.seed,
-        pattern: item.pattern,
-        screenshotsOverride: [
-          {
-            mediaType: "IMAGE",
-            mimeType: "image/png",
-            url: `/${item.screenshots.lightPath}`,
-            storagePath: item.screenshots.lightPath,
-            previewUrl: `/${item.screenshots.lightPath}`,
-            previewStoragePath: item.screenshots.lightPath,
-            width: lightDimensions.width,
-            height: lightDimensions.height,
-            altText: `${item.title} light appearance`,
-          },
-          {
-            mediaType: "IMAGE",
-            mimeType: "image/png",
-            url: `/${item.screenshots.darkPath}`,
-            storagePath: item.screenshots.darkPath,
-            previewUrl: `/${item.screenshots.darkPath}`,
-            previewStoragePath: item.screenshots.darkPath,
-            width: darkDimensions.width,
-            height: darkDimensions.height,
-            altText: `${item.title} dark appearance`,
-          },
-        ],
-      });
-    }
-  }
-
-  return components;
-}
+const productionSeedComponentSlugs = new Set([
+  "aurora-tab-orbit",
+  "harbor-metrics-deck",
+  "linen-checkout-stack",
+  "meridian-pricing-lens",
+  "pulse-profile-grid",
+  "coda-onboarding-flow",
+  "ripple-audio-shelf",
+  "quest-loadout-rack",
+]);
 
 const relatedCategoryNamesBySlug = new Map<string, CategoryName[]>([
   ["harbor-metrics-deck", ["Commerce", "Paywall"]],
@@ -2322,7 +2245,6 @@ async function main() {
 
   const categoryByName = new Map<string, { id: string; accent: string }>();
   const seedCodeBySlug = await loadSeedCodeBySlug();
-  const portComponents = await loadPortComponentsFromSeedManifests();
   const audioTrimmerImageDimensions = await getImageDimensionsFromPublicPath(
     "seed-screenshots/audio-trimmer-full.jpg"
   );
@@ -2335,19 +2257,27 @@ async function main() {
   const audioTrimmerVideoDimensions = await getVideoDimensionsFromPublicPath(
     "seed-videos/audio-trimmer.mp4"
   );
-  const preservedSeedComponentSlugs = new Set([
-    "audio-trimmer",
-    "revenue-card",
-    ...portComponents.map((component) => component.slug),
-  ]);
-  const preservedSeedComponents = [
-    ...sampleComponents.filter((component) =>
-      preservedSeedComponentSlugs.has(component.slug)
-    ),
-    ...portComponents,
-  ];
   const publicSeedComponents =
-    seedProfile === "e2e" ? sampleComponents : preservedSeedComponents;
+    seedProfile === "e2e"
+      ? sampleComponents
+      : sampleComponents.filter((component) =>
+          productionSeedComponentSlugs.has(component.slug)
+        );
+
+  if (seedProfile !== "e2e") {
+    const productionCategories = new Set(
+      publicSeedComponents.map((component) => component.categoryName)
+    );
+
+    if (
+      publicSeedComponents.length !== categories.length ||
+      productionCategories.size !== categories.length
+    ) {
+      throw new Error(
+        "The production seed must publish exactly one component in each category."
+      );
+    }
+  }
 
   for (const category of categories) {
     const categorySlug = slugify(category.name, { lower: true, strict: true });
@@ -2428,6 +2358,30 @@ async function main() {
   const adminId = users.get("admin@copymyui.dev")!.id;
   const fanId = users.get("fan@copymyui.dev")!.id;
   const publishedOwnerId = creatorId;
+
+  if (isCompactSeedMode) {
+    const demoOwnerIds = Array.from(users.values(), (user) => user.id);
+    const demoComponents = await prisma.component.findMany({
+      where: { ownerId: { in: demoOwnerIds } },
+      select: { id: true },
+    });
+    const demoComponentIds = demoComponents.map((component) => component.id);
+
+    if (demoComponentIds.length > 0) {
+      await prisma.$transaction([
+        prisma.componentPurchase.deleteMany({
+          where: { componentId: { in: demoComponentIds } },
+        }),
+        prisma.component.updateMany({
+          where: { id: { in: demoComponentIds } },
+          data: { activeRevisionId: null, approvedRevisionId: null },
+        }),
+        prisma.component.deleteMany({
+          where: { id: { in: demoComponentIds } },
+        }),
+      ]);
+    }
+  }
 
   if (!isSafeSeedMode) {
     await prisma.platformConfig.create({
@@ -2544,10 +2498,12 @@ async function main() {
 
     const categoryIds = [
       category.id,
-      ...(relatedCategoryNamesBySlug
-        .get(component.slug)
-        ?.map((name) => categoryByName.get(name)?.id)
-        .filter((value): value is string => Boolean(value)) ?? []),
+      ...(seedProfile === "e2e"
+        ? relatedCategoryNamesBySlug
+            .get(component.slug)
+            ?.map((name) => categoryByName.get(name)?.id)
+            .filter((value): value is string => Boolean(value)) ?? []
+        : []),
     ].slice(0, 3);
 
     const createdComponent = await prisma.component.create({

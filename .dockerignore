@@ -1,0 +1,17 @@
+.git
+.github
+.idea
+.local-backups
+.next
+.tmp
+coverage
+freecad
+node_modules
+public/uploads
+test-results
+tests
+*.db
+*.log
+.env*
+result.json
+scripts/create_left_guard_side.py

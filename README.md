@@ -83,7 +83,14 @@ CopyMyUI is built with a modern TypeScript stack centered around Next.js, Prisma
 - `npm run test:unit` - run unit tests
 - `npm run test:e2e` - run Playwright end-to-end tests
 - `npm run i18n:check` - verify translation coverage and placeholder consistency
-- `npm run db:seed` - seed the local database
+- `npm run db:seed` - reset a local database and seed the compact demo gallery
+- `npm run db:seed:safe` - add missing compact demo records without deleting data
+- `npm run db:seed:compact` - replace only known demo-owned components with one example per category while preserving real users and their content
+
+The production gallery seed intentionally contains eight components: one for
+each category. The previous generated Swift and screenshot corpus is excluded
+from Git so remote clones and Coolify builds remain small. A verified recovery
+archive may be kept locally under the ignored `.local-backups/` directory.
 
 ### Local setup
 
